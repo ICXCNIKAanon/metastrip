@@ -5,14 +5,33 @@ import type { FileAnalysis } from '@/lib/metadata';
 import { CATEGORY_ICONS } from '@/lib/categories';
 import type { MetadataCategory } from '@/lib/categories';
 
-interface BeforeAfterProps {
+/* ------------------------------------------------------------------ */
+/* Shared types                                                       */
+/* ------------------------------------------------------------------ */
+
+interface BatchResult {
   analysis: FileAnalysis;
-  strippedSize: number;
   strippedBuffer: ArrayBuffer;
-  processingTimeMs: number;
+  strippedSize: number;
   fileName: string;
+}
+
+interface BeforeAfterProps {
+  // Single-file mode (legacy)
+  analysis?: FileAnalysis;
+  strippedSize?: number;
+  strippedBuffer?: ArrayBuffer;
+  processingTimeMs?: number;
+  fileName?: string;
+  // Batch mode
+  results?: BatchResult[];
+  // Common
   onReset: () => void;
 }
+
+/* ------------------------------------------------------------------ */
+/* Constants                                                          */
+/* ------------------------------------------------------------------ */
 
 const CATEGORY_ORDER: MetadataCategory[] = [
   'gps', 'device', 'author', 'timestamps', 'software',
@@ -43,15 +62,14 @@ const RISK_BADGE_BG: Record<FileAnalysis['riskLevel'], string> = {
   none: 'bg-risk-safe/20 text-risk-safe',
 };
 
+/* ------------------------------------------------------------------ */
+/* Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-}
-
-function getExtension(name: string): string {
-  const parts = name.split('.');
-  return parts.length > 1 ? parts[parts.length - 1] : 'bin';
 }
 
 function getCleanFileName(name: string): string {
@@ -62,14 +80,38 @@ function getCleanFileName(name: string): string {
   return `${base}.cleaned.${ext}`;
 }
 
-export default function BeforeAfter({
+function triggerDownload(buffer: ArrayBuffer, fileName: string) {
+  const blob = new Blob([buffer], { type: 'application/octet-stream' });
+  const blobUrl = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), {
+    href: blobUrl,
+    download: getCleanFileName(fileName),
+  });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+}
+
+/* ------------------------------------------------------------------ */
+/* Single-file view                                                   */
+/* ------------------------------------------------------------------ */
+
+function SingleView({
   analysis,
   strippedSize,
   strippedBuffer,
   processingTimeMs,
   fileName,
   onReset,
-}: BeforeAfterProps) {
+}: {
+  analysis: FileAnalysis;
+  strippedSize: number;
+  strippedBuffer: ArrayBuffer;
+  processingTimeMs: number;
+  fileName: string;
+  onReset: () => void;
+}) {
   const { fileSize, riskScore, riskLevel, byCategory } = analysis;
 
   const savedBytes = fileSize - strippedSize;
@@ -84,17 +126,7 @@ export default function BeforeAfter({
   );
 
   const handleDownload = useCallback(() => {
-    const blob = new Blob([strippedBuffer], { type: 'application/octet-stream' });
-    const blobUrl = URL.createObjectURL(blob);
-    // Use Object.assign so href is set from a blob: URL (always safe scheme)
-    const a = Object.assign(document.createElement('a'), {
-      href: blobUrl,
-      download: getCleanFileName(fileName),
-    });
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+    triggerDownload(strippedBuffer, fileName);
   }, [strippedBuffer, fileName]);
 
   const handleCopyLink = useCallback(async () => {
@@ -238,4 +270,180 @@ export default function BeforeAfter({
       </div>
     </div>
   );
+}
+
+/* ------------------------------------------------------------------ */
+/* Batch view                                                         */
+/* ------------------------------------------------------------------ */
+
+function BatchView({
+  results,
+  onReset,
+}: {
+  results: BatchResult[];
+  onReset: () => void;
+}) {
+  const totalEntries = results.reduce((sum, r) => sum + r.analysis.entries.length, 0);
+  const totalSavedBytes = results.reduce((sum, r) => sum + (r.analysis.fileSize - r.strippedSize), 0);
+  const totalSavedKB = (totalSavedBytes / 1024).toFixed(1);
+
+  const handleDownloadOne = useCallback((r: BatchResult) => {
+    triggerDownload(r.strippedBuffer, r.fileName);
+  }, []);
+
+  const handleDownloadAll = useCallback(() => {
+    // Download each file individually with a small stagger to avoid browser blocking
+    results.forEach((r, i) => {
+      setTimeout(() => triggerDownload(r.strippedBuffer, r.fileName), i * 200);
+    });
+  }, [results]);
+
+  const handleCopyLink = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText('https://metastrip.ai');
+    } catch {
+      // Silently fail if clipboard not available
+    }
+  }, []);
+
+  const twitterText = encodeURIComponent(
+    'I just found out my photos had hidden GPS data, device info, and more. Strip your metadata free at https://metastrip.ai',
+  );
+  const twitterUrl = `https://twitter.com/intent/tweet?text=${twitterText}`;
+
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Success banner */}
+      <div className="flex flex-col items-center gap-2 text-center bg-risk-safe/5 border border-risk-safe/20 rounded-card p-5">
+        <span className="text-4xl leading-none" aria-hidden="true">🛡️</span>
+        <h2 className="text-xl font-bold text-primary">
+          Metadata Removed from {results.length} Files
+        </h2>
+        <p className="text-sm text-text-tertiary">
+          {totalEntries} entries stripped · {totalSavedKB} KB saved total
+        </p>
+      </div>
+
+      {/* Per-file rows with download buttons */}
+      <div className="flex flex-col gap-2">
+        {results.map((r, i) => {
+          const saved = r.analysis.fileSize - r.strippedSize;
+          const savedKB = (saved / 1024).toFixed(1);
+          return (
+            <div
+              key={`${r.fileName}-${i}`}
+              className="bg-surface border border-border rounded-card p-4 flex items-center justify-between gap-3"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-text-primary truncate text-sm">{r.fileName}</p>
+                <p className="text-xs text-text-tertiary mt-0.5">
+                  {r.analysis.entries.length} entries stripped · {savedKB} KB saved
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDownloadOne(r)}
+                className="flex-shrink-0 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-xs py-1.5 px-3 rounded-button transition-colors duration-150"
+              >
+                Download
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={handleDownloadAll}
+          className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold py-3 px-5 rounded-button text-base transition-colors duration-150"
+        >
+          Download All ({results.length} files)
+        </button>
+        <button
+          type="button"
+          onClick={onReset}
+          title="Process more files"
+          aria-label="Process more files"
+          className="flex-shrink-0 bg-surface hover:bg-border/60 border border-border text-text-secondary hover:text-text-primary font-bold py-3 px-4 rounded-button text-base transition-colors duration-150"
+        >
+          Process More
+        </button>
+      </div>
+
+      {/* Share prompt */}
+      <div className="flex flex-col items-center gap-2 text-center pt-1">
+        <p className="text-sm text-text-secondary">Surprised by what your photos revealed?</p>
+        <div className="flex items-center gap-4 text-sm">
+          <a
+            href={twitterUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-accent hover:underline font-medium transition-colors duration-150"
+          >
+            Share on X
+          </a>
+          <span className="text-border" aria-hidden="true">·</span>
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="text-text-tertiary hover:text-text-secondary font-medium transition-colors duration-150"
+          >
+            Copy link
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Main export — chooses single vs batch view                         */
+/* ------------------------------------------------------------------ */
+
+export default function BeforeAfter({
+  analysis,
+  strippedSize,
+  strippedBuffer,
+  processingTimeMs,
+  fileName,
+  results,
+  onReset,
+}: BeforeAfterProps) {
+  // Batch mode: `results` array provided
+  if (results && results.length > 1) {
+    return <BatchView results={results} onReset={onReset} />;
+  }
+
+  // Single result from batch array
+  if (results && results.length === 1) {
+    const r = results[0];
+    return (
+      <SingleView
+        analysis={r.analysis}
+        strippedSize={r.strippedSize}
+        strippedBuffer={r.strippedBuffer}
+        processingTimeMs={processingTimeMs ?? 0}
+        fileName={r.fileName}
+        onReset={onReset}
+      />
+    );
+  }
+
+  // Legacy single-file props
+  if (analysis && strippedBuffer && strippedSize !== undefined && fileName) {
+    return (
+      <SingleView
+        analysis={analysis}
+        strippedSize={strippedSize}
+        strippedBuffer={strippedBuffer}
+        processingTimeMs={processingTimeMs ?? 0}
+        fileName={fileName}
+        onReset={onReset}
+      />
+    );
+  }
+
+  return null;
 }

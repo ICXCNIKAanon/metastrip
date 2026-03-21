@@ -42,71 +42,103 @@ const FAQ_ITEMS = [
 ];
 
 export default function Home() {
-  const [file, setFile] = useState<File | null>(null);
-  const [analysis, setAnalysis] = useState<FileAnalysis | null>(null);
-  const [strippedResult, setStrippedResult] = useState<{ buffer: ArrayBuffer; size: number } | null>(null);
+  const [files, setFiles] = useState<Array<{ file: File; buffer: ArrayBuffer }>>([]);
+  const [analyses, setAnalyses] = useState<FileAnalysis[]>([]);
+  const [strippedResults, setStrippedResults] = useState<Array<{ buffer: ArrayBuffer; size: number; fileName: string }>>([]);
   const [processingTimeMs, setProcessingTimeMs] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
 
-  // Keep a ref to the original buffer for the web worker
-  const bufferRef = useRef<ArrayBuffer | null>(null);
+  // Keep refs to the original buffers for the web worker
+  const buffersRef = useRef<ArrayBuffer[]>([]);
 
-  const handleFile = useCallback(async (selectedFile: File, buffer: ArrayBuffer) => {
+  const handleFiles = useCallback(async (selectedFiles: Array<{ file: File; buffer: ArrayBuffer }>) => {
     setPhase('analyzing');
-    setFile(selectedFile);
-    setStrippedResult(null);
+    setFiles(selectedFiles);
+    setStrippedResults([]);
     setProcessingTimeMs(0);
 
-    // Store a copy of the buffer for later worker use
-    bufferRef.current = buffer.slice(0);
+    // Store copies of all buffers for later worker use
+    buffersRef.current = selectedFiles.map((f) => f.buffer.slice(0));
 
     try {
-      const result = await analyzeFile(selectedFile);
-      setAnalysis(result);
+      // Analyze all files
+      const results: FileAnalysis[] = [];
+      for (const { file } of selectedFiles) {
+        const result = await analyzeFile(file);
+        results.push(result);
+      }
+      setAnalyses(results);
       setPhase('results');
     } catch (err) {
-      console.error('Failed to analyze file:', err);
+      console.error('Failed to analyze files:', err);
       setPhase('idle');
     }
   }, []);
 
   const handleStrip = useCallback(() => {
-    if (!bufferRef.current) return;
+    if (buffersRef.current.length === 0) return;
 
     setPhase('stripping');
     const startTime = performance.now();
 
-    // Copy buffer before transferring ownership to worker
-    const bufferCopy = bufferRef.current.slice(0);
+    const results: Array<{ buffer: ArrayBuffer; size: number; fileName: string }> = [];
+    let currentIndex = 0;
 
-    const worker = new Worker(new URL('../lib/strip-worker.ts', import.meta.url));
-    worker.postMessage({ buffer: bufferCopy }, { transfer: [bufferCopy] });
-    worker.onmessage = (e) => {
-      if (e.data.success) {
-        setStrippedResult({ buffer: e.data.buffer, size: e.data.strippedSize });
+    function processNext() {
+      if (currentIndex >= buffersRef.current.length) {
+        // All done
+        setStrippedResults(results);
         setProcessingTimeMs(Math.round(performance.now() - startTime));
         setPhase('done');
-      } else {
-        console.error('Strip worker error:', e.data.error);
-        setPhase('results');
+        return;
       }
-      worker.terminate();
-    };
-    worker.onerror = (err) => {
-      console.error('Worker error:', err);
-      setPhase('results');
-      worker.terminate();
-    };
-  }, []);
+
+      const bufferCopy = buffersRef.current[currentIndex].slice(0);
+      const fileName = files[currentIndex]?.file.name ?? `file-${currentIndex}`;
+
+      const worker = new Worker(new URL('../lib/strip-worker.ts', import.meta.url));
+      worker.postMessage({ buffer: bufferCopy }, { transfer: [bufferCopy] });
+      worker.onmessage = (e) => {
+        if (e.data.success) {
+          results.push({
+            buffer: e.data.buffer,
+            size: e.data.strippedSize,
+            fileName,
+          });
+          currentIndex++;
+          processNext();
+        } else {
+          console.error(`Strip worker error on ${fileName}:`, e.data.error);
+          setPhase('results');
+        }
+        worker.terminate();
+      };
+      worker.onerror = (err) => {
+        console.error('Worker error:', err);
+        setPhase('results');
+        worker.terminate();
+      };
+    }
+
+    processNext();
+  }, [files]);
 
   const handleReset = useCallback(() => {
-    setFile(null);
-    setAnalysis(null);
-    setStrippedResult(null);
+    setFiles([]);
+    setAnalyses([]);
+    setStrippedResults([]);
     setProcessingTimeMs(0);
     setPhase('idle');
-    bufferRef.current = null;
+    buffersRef.current = [];
   }, []);
+
+  // Build batch results for BeforeAfter
+  const batchResults = strippedResults.map((sr, i) => ({
+    analysis: analyses[i],
+    strippedBuffer: sr.buffer,
+    strippedSize: sr.size,
+    fileName: sr.fileName,
+  }));
 
   return (
     <main className="min-h-screen">
@@ -130,11 +162,11 @@ export default function Home() {
       {/* ========== TOOL AREA ========== */}
       <section className="max-w-4xl mx-auto px-4 pb-16">
         {(phase === 'idle' || phase === 'analyzing') && (
-          <DropZone onFileSelected={handleFile} />
+          <DropZone onFilesSelected={handleFiles} />
         )}
 
-        {phase === 'results' && analysis && (
-          <ResultsPanel analysis={analysis} onStrip={handleStrip} />
+        {phase === 'results' && analyses.length > 0 && (
+          <ResultsPanel analyses={analyses} onStrip={handleStrip} />
         )}
 
         {phase === 'stripping' && (
@@ -142,17 +174,18 @@ export default function Home() {
             {/* Spinner */}
             <div className="w-10 h-10 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
             <p className="text-lg font-semibold text-text-primary">Removing metadata...</p>
-            <p className="text-sm text-text-tertiary">This takes less than a second</p>
+            <p className="text-sm text-text-tertiary">
+              {files.length === 1
+                ? 'This takes less than a second'
+                : `Processing ${files.length} files...`}
+            </p>
           </div>
         )}
 
-        {phase === 'done' && analysis && strippedResult && file && (
+        {phase === 'done' && batchResults.length > 0 && (
           <BeforeAfter
-            analysis={analysis}
-            strippedSize={strippedResult.size}
-            strippedBuffer={strippedResult.buffer}
+            results={batchResults}
             processingTimeMs={processingTimeMs}
-            fileName={file.name}
             onReset={handleReset}
           />
         )}
