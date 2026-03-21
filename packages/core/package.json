@@ -1,0 +1,30 @@
+{
+  "name": "@metastrip/core",
+  "version": "0.1.0",
+  "description": "Core metadata processing engine — read, strip, and compare metadata across images, videos, PDFs, and documents",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --test dist/**/*.test.js"
+  },
+  "dependencies": {
+    "exifreader": "^4.14.0",
+    "sharp": "^0.33.2",
+    "music-metadata": "^7.14.0",
+    "pdf-parse": "^1.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  },
+  "license": "MIT",
+  "keywords": ["metadata", "exif", "privacy", "strip", "remove", "image", "video", "pdf"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metastrip/metastrip",
+    "directory": "packages/core"
+  }
+}

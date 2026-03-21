@@ -1,0 +1,96 @@
+---
+title: "How GPS Data in Photos Puts Your Privacy at Risk"
+date: "2026-03-18"
+description: "Your smartphone embeds exact GPS coordinates in every photo. Here's why that's a problem and how to fix it."
+author: "MetaStrip Team"
+---
+
+Every smartphone photo contains embedded GPS coordinates that reveal the exact location where it was taken — your home address, workplace, or current position. This happens automatically, silently, and by default on virtually every modern smartphone — unless you have specifically disabled it.
+
+The data is not approximate. We are not talking about a city or a neighborhood. GPS metadata records your latitude and longitude to five or more decimal places, which is accurate to within a few meters. Your home address is in those photos.
+
+## How GPS Gets Embedded
+
+When you open your camera app, your phone requests access to location services. On most devices, this permission is granted during the initial setup, and the camera continues to log your location with every photo from that point on.
+
+The coordinates are written into the EXIF (Exchangeable Image File Format) section of the image file. Specifically, the metadata stores:
+
+- **GPSLatitude** and **GPSLongitude** — Your exact position in degrees, minutes, and seconds
+- **GPSAltitude** — Your elevation above sea level, which can indicate which floor of a building you are on
+- **GPSTimeStamp** and **GPSDateStamp** — UTC time from the GPS signal, independent of your camera clock
+
+This information is written once per photo and then travels with the file forever. It is not stored separately from the image. It is inside the image file itself.
+
+## Real-World Privacy Scenarios
+
+### Your Home Address in Every Photo
+
+If you take a photo at home — of a meal, a product you're selling, a pet, anything — that photo contains the GPS coordinates of your home. Post it to an online marketplace, a forum, a social media account, or send it to a stranger, and you have effectively given them your address.
+
+This is not a theoretical risk. People selling items on Facebook Marketplace, Craigslist, and similar platforms have inadvertently revealed their home addresses through photo metadata. Stalkers have used this information. Burglars have used this information to determine when a home is occupied by cross-referencing posting times with GPS data.
+
+### Travel Patterns Become Visible
+
+A series of photos shared over time builds a map of your movements. Your morning run photos reveal your route. Your lunch photos reveal where you eat. Your vacation photos reveal when your home is empty and where you went. Photos from a doctor's office reveal medical appointments. Photos from a religious institution reveal your faith.
+
+Each individual photo might seem harmless. The metadata attached to all of them together is a detailed record of your life.
+
+### Professional and Journalistic Risk
+
+For journalists, activists, attorneys, healthcare workers, and others who operate in sensitive environments, GPS metadata in photos can compromise sources, clients, and colleagues.
+
+A photo taken inside a confidential meeting, at a source's home, at a witness protection location, or at a facility that should not be publicly disclosed carries its location embedded in the file. If that photo is shared — even in what seems like a private context — the location travels with it.
+
+International journalists working in conflict zones or authoritarian countries face serious safety risks if photos taken at sensitive locations are captured or obtained.
+
+### Cross-Referencing Exposes Patterns
+
+GPS metadata alone is powerful. Combined with other data, it becomes a comprehensive surveillance record. Investigators, data brokers, and malicious actors can correlate GPS coordinates from photos with public records, business databases, and social media check-ins to build detailed profiles of individuals.
+
+This cross-referencing happens without the subject's knowledge. You do not need to be the target of an investigation to be affected. Data aggregators operate at scale, and once your location data exists in a system, you have no control over how it is used or sold.
+
+## How Different Services Handle GPS Metadata
+
+Not all platforms treat metadata the same way:
+
+**Platforms that generally strip metadata on upload:**
+- Instagram
+- Facebook
+- Twitter/X
+- WhatsApp (in most cases)
+
+**Platforms that often preserve metadata:**
+- Email attachments
+- Direct file sharing (Dropbox, Google Drive, iCloud)
+- Many forum and image hosting sites
+- Dating apps (many preserve full EXIF)
+- Real estate listing photos
+- eBay and Craigslist listings
+
+The problem is twofold: you cannot always know whether a platform strips metadata, and platforms can change their policies. More importantly, photos shared privately — in direct messages, over email, or via file transfer — are almost never stripped.
+
+## How to Check Your Current Settings
+
+On **iPhone**: Settings → Privacy & Security → Location Services → Camera. You can set it to "Never" or "While Using App." Setting it to "Never" disables GPS embedding completely. "While Using App" still embeds coordinates.
+
+On **Android**: This varies by manufacturer, but generally: Settings → Privacy → Permission Manager → Location → Camera. Deny the permission to stop GPS embedding.
+
+Disabling GPS for the camera is the most reliable prevention. But it does not help with photos already taken, and it prevents you from using location-aware camera features if you want them.
+
+## How MetaStrip Helps
+
+The better approach for many people is to keep GPS enabled in the camera — it is useful for organizing photos in your own library — but remove GPS data before sharing.
+
+**[MetaStrip](/)** lets you do exactly that. Drop your photo into the browser tool, and it instantly shows you every GPS coordinate, timestamp, and device identifier embedded in the file. You can then strip all metadata with a single click and download a clean version ready to share.
+
+The entire process happens in your browser. Your photo never leaves your device. There is no upload, no server, no account required.
+
+For developers and power users, the MetaStrip CLI strips GPS data from entire directories of images in a single command:
+
+```bash
+metastrip clean ./photos/ --output ./clean/
+```
+
+No quality loss. No recompression. Every pixel identical to the original. Just the metadata removed.
+
+Check what your photos reveal today — before you share another one.

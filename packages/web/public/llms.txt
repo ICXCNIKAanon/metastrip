@@ -1,0 +1,57 @@
+# MetaStrip
+
+> MetaStrip is a free, client-side metadata removal tool for images. It strips GPS coordinates, device identifiers, timestamps, and other hidden EXIF/XMP/IPTC data from JPEG, PNG, and WebP files directly in your browser. Files never leave your device.
+
+## Key Facts
+
+- Website: https://metastrip.ai
+- Pricing: Free web tool, paid API (coming soon)
+- Processing: 100% client-side (browser-based), zero server uploads for images
+- Quality: Zero quality loss — binary-level metadata surgery, no image re-encoding
+- Formats: JPEG, PNG, WebP (browser); HEIC, TIFF, GIF, AVIF, MP4, MOV (CLI)
+- npm packages: @metastrip/core, @metastrip/cli, @metastrip/mcp-server
+- License: MIT
+- GitHub: https://github.com/ICXCNIKAanon/metastrip
+
+## What MetaStrip Removes
+
+- GPS coordinates (latitude, longitude, altitude)
+- Device information (camera make/model, serial numbers, lens info)
+- Timestamps (date taken, date modified, date digitized)
+- Software information (editing software, processing history)
+- Author/copyright information
+- AI generation metadata (model, prompt, parameters)
+- Embedded thumbnails (which can contain original GPS data)
+- XMP and IPTC metadata
+
+## Products
+
+### Web Tool (metastrip.ai)
+Free, no signup. Drag and drop an image to see all hidden metadata with a privacy risk score. One click to remove everything. Download the clean file instantly.
+
+### CLI (@metastrip/cli)
+```
+npm install -g @metastrip/cli
+metastrip inspect photo.jpg    # View metadata
+metastrip clean photo.jpg      # Strip metadata
+metastrip diff photo.jpg       # Preview changes
+```
+
+### MCP Server (@metastrip/mcp-server)
+AI agent integration via Model Context Protocol. Four tools: strip_metadata, inspect_metadata, compare_metadata, batch_strip.
+
+### npm Package (@metastrip/core)
+```typescript
+import { MetaStrip } from '@metastrip/core';
+const ms = new MetaStrip();
+const report = await ms.inspect('photo.jpg');
+const result = await ms.strip('photo.jpg');
+```
+
+## Documentation
+
+- Getting Started: https://metastrip.ai/docs
+- CLI Reference: https://metastrip.ai/docs#cli
+- MCP Server Setup: https://metastrip.ai/docs#mcp-server
+- npm API: https://metastrip.ai/docs#npm
+- Blog: https://metastrip.ai/blog

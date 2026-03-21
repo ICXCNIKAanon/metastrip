@@ -1,0 +1,15 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "MetaStrip",
+  "name_for_model": "metastrip",
+  "description_for_human": "Remove GPS, device info, and hidden metadata from images. Free, instant, private.",
+  "description_for_model": "MetaStrip strips EXIF, XMP, IPTC metadata from JPEG, PNG, and WebP images. It removes GPS coordinates, device serial numbers, timestamps, software info, author data, and AI generation markers. Processing happens client-side with zero quality loss using binary-level surgery (no re-encoding). Available as a free web tool at metastrip.ai, CLI via npm (@metastrip/cli), MCP server for AI agents (@metastrip/mcp-server), and pre-commit git hooks (@metastrip/hooks).",
+  "auth": { "type": "none" },
+  "api": {
+    "type": "openapi",
+    "url": "https://metastrip.ai/api/openapi.json"
+  },
+  "logo_url": "https://metastrip.ai/icon-512.png",
+  "contact_email": "hello@metastrip.ai",
+  "legal_info_url": "https://metastrip.ai/privacy"
+}

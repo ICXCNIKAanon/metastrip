@@ -1,0 +1,123 @@
+---
+title: "MetaStrip vs ExifTool — Which Metadata Removal Tool Should You Use?"
+date: "2026-03-16"
+description: "Comparing MetaStrip and ExifTool for metadata removal. Web tool vs CLI, zero quality loss, AI agent integration, and more."
+author: "MetaStrip Team"
+---
+
+MetaStrip and ExifTool are both tools for working with image metadata, but they serve different audiences and take fundamentally different approaches. This is an honest comparison of both tools — where each excels and where each falls short.
+
+## What They Are
+
+**ExifTool** is a mature, Perl-based command-line application created by Phil Harvey. It has been the industry standard for reading and writing metadata since 2003. It supports over 400 file formats and provides granular, per-field control over metadata. It is open source under the GPL/Artistic license.
+
+**MetaStrip** is a newer, TypeScript-based metadata removal tool available as a web app, CLI, npm package, MCP server for AI agents, and pre-commit git hooks. It focuses on one thing — stripping all identifying metadata from images with zero quality loss. It is open source under the MIT license.
+
+## Format Support
+
+This is where ExifTool has a clear and significant advantage. ExifTool supports over 400 file formats, including obscure RAW formats from dozens of camera manufacturers, PSD, PDF, Office documents, audio files, video containers, and more. If you work with a niche format, ExifTool almost certainly supports it.
+
+MetaStrip supports 9 image and video formats: JPEG, PNG, WebP, HEIC, TIFF, GIF, AVIF, MP4, and MOV. These cover the vast majority of use cases for web, mobile, and social media, but if you need to strip metadata from a Canon CR3 RAW file or a Nikon NEF, ExifTool is the right tool.
+
+## Granularity of Control
+
+ExifTool lets you read, write, and modify individual metadata fields. You can keep GPS but remove device info. You can edit the date, change the author, or add custom fields. This fine-grained control is essential for photographers, archivists, and forensics professionals.
+
+MetaStrip takes a different approach: it removes all identifying metadata in a single operation. There is no field-level control because MetaStrip is designed for privacy, not metadata management. The philosophy is simple — if it can identify you, it gets removed. ICC color profiles are preserved because they affect color rendering and are not privacy-sensitive.
+
+## Zero Quality Loss
+
+This is where MetaStrip differentiates itself technically. MetaStrip performs binary-level surgery on image files. It identifies metadata segments by their byte offsets and removes them without touching the image data. There is no re-encoding, no recompression, and no pixel changes. The output is guaranteed to be identical in image quality to the input.
+
+ExifTool can also remove metadata without re-encoding in many cases, but its behavior depends on the specific operation and options used. Some ExifTool workflows — particularly those involving format conversion or writing certain types of metadata — can trigger re-encoding. With MetaStrip, zero quality loss is the only mode of operation.
+
+## Web Tool
+
+MetaStrip has a free, no-install web tool at [metastrip.ai](/) where you can drag and drop an image, see all hidden metadata with a privacy risk score, and strip everything with one click. Files never leave your browser — all processing happens client-side.
+
+ExifTool does not have a web interface. It is a command-line tool that requires installation. There are third-party web wrappers for ExifTool, but they require uploading your files to a server, which defeats the purpose of privacy-focused metadata removal.
+
+## AI Agent Integration
+
+MetaStrip provides a dedicated MCP (Model Context Protocol) server that allows AI agents like Claude and GPT to inspect and remove metadata from images programmatically. This is useful for AI-assisted workflows where an agent needs to clean images before processing or sharing them.
+
+```json
+{
+  "mcpServers": {
+    "metastrip": {
+      "command": "npx",
+      "args": ["@metastrip/mcp-server"]
+    }
+  }
+}
+```
+
+ExifTool does not have MCP or AI agent integration. You can call ExifTool from a shell via AI coding assistants, but there is no structured tool interface.
+
+## Git Hooks
+
+MetaStrip offers pre-commit git hooks that automatically strip metadata from every image you commit:
+
+```bash
+npx metastrip-hooks install
+```
+
+Once installed, every `git commit` that includes image files will automatically strip metadata before the commit completes. This prevents accidental leaks of GPS coordinates, device serials, and other identifying data in version-controlled repositories.
+
+ExifTool can achieve similar functionality with custom shell scripts in git hooks, but it requires manual setup and maintenance.
+
+## Installation and Ecosystem
+
+MetaStrip is distributed via npm, which means installation is a single command if you already have Node.js:
+
+```bash
+npm install -g @metastrip/cli
+```
+
+It also provides a programmatic API (`@metastrip/core`) that integrates natively with JavaScript and TypeScript projects — Express middleware, Next.js API routes, serverless functions, and build pipelines.
+
+ExifTool installation varies by platform. On macOS it is available via Homebrew, on Linux via package managers, and on Windows via a standalone executable. It is written in Perl, which makes integration with JavaScript projects less straightforward.
+
+## Privacy Risk Scoring
+
+MetaStrip assigns a privacy risk score (0-100) to every file it inspects. GPS coordinates score high. Camera model alone scores low. This gives non-technical users an immediate, intuitive understanding of how much a file reveals.
+
+ExifTool displays raw metadata fields without risk assessment. It is a more powerful inspection tool, but requires the user to understand which fields are privacy-sensitive.
+
+## Side-by-Side Comparison
+
+| Feature | MetaStrip | ExifTool |
+|---------|-----------|----------|
+| Web tool (no install) | Yes | No |
+| CLI | Yes | Yes |
+| Format support | 9 formats | 400+ formats |
+| Field-level control | No (strip all) | Yes |
+| Zero quality loss | Guaranteed | Usually (depends on operation) |
+| AI agent integration (MCP) | Yes | No |
+| Pre-commit git hooks | Yes | Manual scripting |
+| Privacy risk scoring | Yes | No |
+| npm package | Yes | No |
+| Read metadata | Yes | Yes (more fields) |
+| Write/edit metadata | No | Yes |
+| Price | Free (MIT) | Free (GPL/Artistic) |
+| Language | TypeScript | Perl |
+| Track record | New | 20+ years |
+
+## Which Should You Use?
+
+**Choose MetaStrip if:**
+- You want to strip all metadata quickly with guaranteed zero quality loss
+- You need a web tool with no installation
+- You work in the JavaScript/TypeScript ecosystem
+- You want AI agent integration via MCP
+- You want automatic metadata stripping on git commits
+- You want a privacy risk score for non-technical stakeholders
+
+**Choose ExifTool if:**
+- You need fine-grained control over individual metadata fields
+- You work with RAW files or obscure formats
+- You need to write or edit metadata (not just remove it)
+- You need the deepest possible metadata inspection
+- You need a battle-tested tool with a 20+ year track record
+
+Both tools are free and open source. They solve related but different problems. For many users, the answer is both — ExifTool for detailed metadata work, and MetaStrip for quick, reliable privacy stripping.

@@ -1,0 +1,162 @@
+---
+title: "How to Remove Metadata from Images Before Sharing Online"
+date: "2026-03-17"
+description: "A step-by-step guide to stripping GPS, device info, and other hidden data from your photos using MetaStrip."
+author: "MetaStrip Team"
+---
+
+To remove metadata from an image, drag it onto metastrip.ai — all GPS, device, and timestamp data is stripped instantly in your browser with zero quality loss. This guide covers two methods: the MetaStrip web tool (no installation required) and the MetaStrip CLI (for power users and automation).
+
+Both produce the same result: a clean image file with all identifying metadata removed, at zero quality loss.
+
+## Method 1: MetaStrip Web Tool
+
+The web tool runs entirely in your browser. Your photo never leaves your device — all processing happens locally using JavaScript. No account required, no upload, completely free.
+
+### Step 1: Open MetaStrip
+
+Navigate to **[metastrip.ai](/)** in any modern browser. You will see the drop zone immediately — no login screen, no onboarding.
+
+### Step 2: Drop Your Photo
+
+Drag your image file directly onto the drop zone, or click it to open a file picker. Supported formats: **JPEG, PNG, WebP**.
+
+The tool begins analyzing immediately. It reads the file's binary structure and identifies every metadata segment: EXIF APP1 markers, XMP blocks, IPTC records, and embedded color profiles.
+
+### Step 3: Review What Was Found
+
+After a moment, you will see a full breakdown of your file's metadata:
+
+- **GPS Location** — Latitude, longitude, and altitude with a map showing the exact location
+- **Device Info** — Camera make, model, and serial number
+- **Timestamps** — When the photo was taken and last modified
+- **Software** — Editing tools used and version history
+- **AI Markers** — Generation parameters from Midjourney, DALL-E, Stable Diffusion, and other tools
+- **Creator Fields** — Your name, copyright, and contact information if embedded
+
+You will also see a **Privacy Risk Score** — a rating from 0 to 100 that weighs the sensitivity of the data found. GPS coordinates score high. Camera model alone scores low.
+
+### Step 4: Strip Metadata
+
+Click the **"Strip Metadata"** button. The tool performs binary surgery on the file:
+
+- All EXIF segments are removed
+- All XMP blocks are removed
+- All IPTC records are removed
+- **ICC color profiles are preserved** — these affect color rendering and are not privacy-sensitive, so MetaStrip keeps them by default
+
+This operation takes less than a second. It does not recompress or re-encode the image data. Every pixel in the output file is identical to the original.
+
+### Step 5: Download the Clean File
+
+Click **"Download Clean File"** to save the stripped version. The file is named with a `-clean` suffix by default.
+
+You can verify the result by dropping the downloaded file back into the tool — it will show zero metadata found.
+
+## Method 2: MetaStrip CLI
+
+The CLI is built for users who need to process many files, automate metadata removal in a workflow, or integrate it into scripts and pipelines.
+
+### Install the CLI
+
+```bash
+npm install -g @metastrip/cli
+```
+
+Requires Node.js 18 or later.
+
+### Inspect a File First
+
+Before stripping, use the `inspect` command to see what a file contains:
+
+```bash
+metastrip inspect photo.jpg
+```
+
+This prints a full metadata report to the terminal. Add `--format json` for machine-readable output:
+
+```bash
+metastrip inspect photo.jpg --format json
+```
+
+Or `--format summary` for a brief one-line overview:
+
+```bash
+metastrip inspect photo.jpg --format summary
+```
+
+### Strip a Single File
+
+```bash
+metastrip clean photo.jpg
+```
+
+By default, this overwrites the original file. To write to a new file:
+
+```bash
+metastrip clean photo.jpg --output photo-clean.jpg
+```
+
+### Strip an Entire Directory
+
+```bash
+metastrip clean ./photos/ --output ./clean/
+```
+
+The CLI processes all supported image files in the directory recursively and writes clean versions to the output directory, preserving the original folder structure.
+
+### Preview Before Stripping
+
+Use the `diff` command to see exactly what would be removed without making any changes:
+
+```bash
+metastrip diff photo.jpg
+```
+
+This is useful for verification before batch operations.
+
+### Supported Formats
+
+The CLI supports more formats than the web tool:
+
+| Format | Web Tool | CLI |
+|--------|----------|-----|
+| JPEG   | Yes      | Yes |
+| PNG    | Yes      | Yes |
+| WebP   | Yes      | Yes |
+| HEIC   | No       | Yes |
+| TIFF   | No       | Yes |
+| AVIF   | No       | Yes |
+| GIF    | No       | Yes |
+
+## What Gets Removed vs. Preserved
+
+Understanding what MetaStrip removes and keeps helps you understand the trade-offs.
+
+### Removed
+
+- **EXIF data** — GPS coordinates, device make/model, serial numbers, timestamps, camera settings, flash, ISO, shutter speed, focal length
+- **XMP data** — Software history, editing metadata, AI generation parameters, rights management
+- **IPTC data** — Creator name, copyright, caption, keywords, location fields
+
+### Preserved
+
+- **ICC color profiles** — These are not identifying. They define how colors should be displayed and are required for accurate color rendering. Removing them can cause color shifts, so MetaStrip keeps them.
+- **Image data** — Every pixel, unchanged. No recompression, no quality loss, no encoding artifacts added.
+- **File format structure** — The output is a valid, standard-compliant file of the same format as the input.
+
+## Why Zero Quality Loss Matters
+
+Some metadata removal approaches work by re-encoding the image. Re-encoding a JPEG creates new compression artifacts — subtle degradation that compounds every time the file is processed. This is unnecessary.
+
+MetaStrip does not touch image data at all. It operates on the binary file structure directly, removing only the metadata segments and leaving the image bytes untouched. The output file will be slightly smaller than the original (by the size of the metadata), but image quality is absolutely identical.
+
+You can verify this yourself: open both files in any image editor and compare them pixel by pixel. They will be identical.
+
+## Getting Started
+
+The web tool is at **[metastrip.ai](/)** — no download, no account, free forever. Drop in a photo right now to see what it contains.
+
+For the CLI and full API documentation, visit the **[docs page](/docs)**. The CLI is open source and available on npm as `@metastrip/cli`.
+
+Remove it before you share it.

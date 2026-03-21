@@ -1,0 +1,709 @@
+# MetaStrip — Full Documentation
+
+> MetaStrip is a free, open-source metadata removal tool for images. It strips GPS coordinates, device identifiers, timestamps, AI generation markers, and all other hidden EXIF/XMP/IPTC data from image files. Available as a web tool, CLI, npm package, MCP server for AI agents, and pre-commit git hooks. Processing is 100% client-side (browser) or local (CLI) — files never leave the user's device.
+
+## Table of Contents
+
+1. [Product Overview](#product-overview)
+2. [Web Tool](#web-tool)
+3. [CLI Reference](#cli-reference)
+4. [MCP Server](#mcp-server)
+5. [npm API](#npm-api)
+6. [Git Hooks](#git-hooks)
+7. [What Metadata Gets Removed](#what-metadata-gets-removed)
+8. [Supported Formats](#supported-formats)
+9. [How It Works Technically](#how-it-works-technically)
+10. [Privacy and Security](#privacy-and-security)
+11. [Comparison to Alternatives](#comparison-to-alternatives)
+12. [Pricing](#pricing)
+13. [URLs and Resources](#urls-and-resources)
+
+---
+
+## Product Overview
+
+MetaStrip exists because every digital photo contains hidden metadata that can reveal sensitive personal information — GPS coordinates (your home address), device serial numbers (trackable across platforms), timestamps (a timeline of your movements), and more. Most people have no idea this data exists.
+
+MetaStrip makes it trivially easy to see what your photos reveal and remove it all with zero quality loss. The tool performs binary-level surgery on files — it removes only metadata segments without touching the image data. There is no re-encoding, no recompression, and no pixel changes. The output is byte-for-byte identical in image quality to the input.
+
+### Key Facts
+
+- **Website**: https://metastrip.ai
+- **GitHub**: https://github.com/ICXCNIKAanon/metastrip
+- **npm org**: https://www.npmjs.com/org/metastrip
+- **License**: MIT
+- **Pricing**: Free web tool, free CLI, free MCP server. Paid API coming soon.
+- **Processing**: 100% client-side (browser) or local (CLI). Zero server uploads for images.
+- **Quality**: Zero quality loss — binary-level metadata surgery, no image re-encoding.
+- **Formats (browser)**: JPEG, PNG, WebP
+- **Formats (CLI)**: JPEG, PNG, WebP, HEIC, TIFF, GIF, AVIF, MP4, MOV
+
+### npm Packages
+
+| Package | Description |
+|---------|-------------|
+| `@metastrip/core` | Core library for metadata inspection and removal |
+| `@metastrip/cli` | Command-line interface for metadata operations |
+| `@metastrip/mcp-server` | Model Context Protocol server for AI agent integration |
+| `@metastrip/hooks` | Pre-commit git hooks for automatic metadata stripping |
+
+---
+
+## Web Tool
+
+**URL**: https://metastrip.ai
+
+The web tool is a free, no-signup, drag-and-drop interface for inspecting and removing metadata from images. It runs entirely in the browser using JavaScript and Web Workers. Files never leave the user's device — you can verify this by disconnecting from the internet before using the tool.
+
+### How to Use
+
+1. **Open** https://metastrip.ai in any modern browser
+2. **Drop** a JPEG, PNG, or WebP file onto the drop zone (or click to browse)
+3. **Review** the full metadata report: GPS coordinates with map, device info, timestamps, software, AI markers, creator fields
+4. **Check** the Privacy Risk Score (0–100) — GPS coordinates score high, camera model alone scores low
+5. **Click** "Strip Metadata" to remove everything
+6. **Download** the clean file (named with a `-clean` suffix)
+
+### What the Web Tool Shows
+
+- GPS coordinates (latitude, longitude, altitude) with visual map
+- Device make, model, and serial number
+- Date/time taken and modified
+- Software and editing history
+- AI generation metadata (model, prompt, parameters)
+- Creator name, copyright, contact information
+- IPTC caption, keywords, location fields
+- Embedded thumbnail analysis
+- Privacy Risk Score (0–100)
+
+### Supported Formats (Web)
+
+- JPEG (.jpg, .jpeg)
+- PNG (.png)
+- WebP (.webp)
+
+---
+
+## CLI Reference
+
+**Package**: `@metastrip/cli`
+**Requires**: Node.js 18 or later
+
+### Installation
+
+```bash
+npm install -g @metastrip/cli
+```
+
+### Commands
+
+#### `metastrip inspect <file|directory>`
+
+View all metadata in a file without modifying it.
+
+```bash
+# Basic inspection
+metastrip inspect photo.jpg
+
+# JSON output for scripting
+metastrip inspect photo.jpg --format json
+
+# Brief one-line summary
+metastrip inspect photo.jpg --format summary
+
+# Inspect all images in a directory
+metastrip inspect ./photos/
+```
+
+**Options:**
+| Option | Description |
+|--------|-------------|
+| `--format <type>` | Output format: `table` (default), `json`, `summary` |
+| `--recursive` | Recurse into subdirectories |
+
+#### `metastrip clean <file|directory>`
+
+Strip all metadata from one or more files.
+
+```bash
+# Strip metadata (overwrites original)
+metastrip clean photo.jpg
+
+# Write to a new file
+metastrip clean photo.jpg --output photo-clean.jpg
+
+# Strip entire directory, write to output directory
+metastrip clean ./photos/ --output ./clean/
+
+# Dry run — show what would be removed without modifying
+metastrip clean photo.jpg --dry-run
+```
+
+**Options:**
+| Option | Description |
+|--------|-------------|
+| `--output <path>` | Write cleaned file(s) to this path instead of overwriting |
+| `--recursive` | Recurse into subdirectories |
+| `--dry-run` | Show what would be removed without making changes |
+| `--keep-icc` | Preserve ICC color profiles (default: true) |
+| `--quiet` | Suppress output except errors |
+
+#### `metastrip diff <file>`
+
+Preview what metadata would be removed, without making any changes. Useful for verification before batch operations.
+
+```bash
+# See what would be removed
+metastrip diff photo.jpg
+
+# JSON output
+metastrip diff photo.jpg --format json
+```
+
+**Options:**
+| Option | Description |
+|--------|-------------|
+| `--format <type>` | Output format: `table` (default), `json` |
+
+### CLI Examples
+
+```bash
+# Inspect a single file
+metastrip inspect vacation.jpg
+
+# Strip all photos in a directory, preserving originals
+metastrip clean ./uploads/ --output ./clean-uploads/
+
+# Preview what would be removed from a batch
+metastrip diff ./photos/
+
+# JSON output for piping to other tools
+metastrip inspect photo.jpg --format json | jq '.gps'
+
+# Strip all images recursively
+metastrip clean ./project/assets/ --recursive --output ./project/clean-assets/
+```
+
+---
+
+## MCP Server
+
+**Package**: `@metastrip/mcp-server`
+
+The MCP (Model Context Protocol) server allows AI agents (Claude, GPT, etc.) to inspect and remove metadata from images programmatically. It exposes four tools via the MCP protocol.
+
+### Setup
+
+Add to your Claude Desktop or MCP client configuration:
+
+```json
+{
+  "mcpServers": {
+    "metastrip": {
+      "command": "npx",
+      "args": ["@metastrip/mcp-server"]
+    }
+  }
+}
+```
+
+Or install globally and run directly:
+
+```bash
+npm install -g @metastrip/mcp-server
+metastrip-mcp
+```
+
+### Tools
+
+#### `strip_metadata`
+
+Remove all metadata from an image file.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `file_path` | string | Yes | Absolute path to the image file |
+| `output_path` | string | No | Path for the cleaned file. If omitted, overwrites the original. |
+| `keep_icc` | boolean | No | Preserve ICC color profiles. Default: true. |
+
+**Returns:** Object with `success`, `original_size`, `stripped_size`, `metadata_removed` fields.
+
+#### `inspect_metadata`
+
+Read and return all metadata from an image file without modifying it.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `file_path` | string | Yes | Absolute path to the image file |
+
+**Returns:** Object with `gps`, `device`, `timestamps`, `software`, `ai_markers`, `creator`, `risk_score`, and full `raw` metadata fields.
+
+#### `compare_metadata`
+
+Compare metadata between two files (e.g., before and after stripping).
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `file_path_a` | string | Yes | Path to the first file |
+| `file_path_b` | string | Yes | Path to the second file |
+
+**Returns:** Object with `differences` array showing added, removed, and changed metadata fields.
+
+#### `batch_strip`
+
+Strip metadata from multiple files at once.
+
+**Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `directory` | string | Yes | Path to directory containing images |
+| `output_directory` | string | No | Path for cleaned files. If omitted, overwrites originals. |
+| `recursive` | boolean | No | Process subdirectories. Default: false. |
+| `keep_icc` | boolean | No | Preserve ICC color profiles. Default: true. |
+
+**Returns:** Object with `processed`, `skipped`, `errors`, and per-file results.
+
+---
+
+## npm API
+
+**Package**: `@metastrip/core`
+
+### Installation
+
+```bash
+npm install @metastrip/core
+```
+
+### Basic Usage
+
+```typescript
+import { MetaStrip } from '@metastrip/core';
+
+const ms = new MetaStrip();
+
+// Inspect metadata
+const report = await ms.inspect('photo.jpg');
+console.log(report.gps);          // { latitude: 40.7128, longitude: -74.0060, altitude: 10 }
+console.log(report.device);       // { make: 'Apple', model: 'iPhone 16 Pro', serial: '...' }
+console.log(report.timestamps);   // { taken: '2026-03-15T14:30:00', modified: '...' }
+console.log(report.riskScore);    // 85
+
+// Strip metadata
+const result = await ms.strip('photo.jpg');
+console.log(result.originalSize);   // 4521984
+console.log(result.strippedSize);   // 4498231
+console.log(result.metadataRemoved); // ['EXIF', 'XMP', 'IPTC']
+
+// Strip with output path
+const result2 = await ms.strip('photo.jpg', { output: 'photo-clean.jpg' });
+
+// Strip from buffer (for web/serverless use)
+const buffer = fs.readFileSync('photo.jpg');
+const cleanBuffer = await ms.stripBuffer(buffer);
+fs.writeFileSync('photo-clean.jpg', cleanBuffer);
+```
+
+### API Reference
+
+#### `new MetaStrip(options?)`
+
+Create a new MetaStrip instance.
+
+**Options:**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `keepIcc` | boolean | `true` | Preserve ICC color profiles |
+
+#### `ms.inspect(filePath: string): Promise<InspectReport>`
+
+Inspect a file and return a full metadata report.
+
+**Returns `InspectReport`:**
+```typescript
+interface InspectReport {
+  gps: { latitude: number; longitude: number; altitude?: number } | null;
+  device: { make: string; model: string; serial?: string } | null;
+  timestamps: { taken?: string; modified?: string; digitized?: string } | null;
+  software: { name: string; version?: string }[] | null;
+  aiMarkers: { model?: string; prompt?: string; parameters?: Record<string, unknown> } | null;
+  creator: { name?: string; copyright?: string } | null;
+  riskScore: number;
+  raw: Record<string, unknown>;
+  segments: { type: string; offset: number; length: number }[];
+}
+```
+
+#### `ms.strip(filePath: string, options?): Promise<StripResult>`
+
+Strip metadata from a file.
+
+**Options:**
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `output` | string | (overwrite) | Output file path |
+| `keepIcc` | boolean | `true` | Preserve ICC color profiles |
+
+**Returns `StripResult`:**
+```typescript
+interface StripResult {
+  success: boolean;
+  originalSize: number;
+  strippedSize: number;
+  metadataRemoved: string[];
+}
+```
+
+#### `ms.stripBuffer(buffer: Buffer | ArrayBuffer): Promise<Buffer>`
+
+Strip metadata from a buffer. Useful for serverless functions, web workers, and streaming pipelines.
+
+#### `ms.diff(filePath: string): Promise<DiffReport>`
+
+Preview what metadata would be removed without making changes.
+
+### Code Examples
+
+#### Express.js middleware
+
+```typescript
+import express from 'express';
+import multer from 'multer';
+import { MetaStrip } from '@metastrip/core';
+
+const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
+const ms = new MetaStrip();
+
+app.post('/upload', upload.single('image'), async (req, res) => {
+  if (!req.file) return res.status(400).send('No file');
+
+  // Strip metadata before saving
+  const cleanBuffer = await ms.stripBuffer(req.file.buffer);
+  // Save cleanBuffer to storage...
+
+  res.json({ success: true, originalSize: req.file.size, cleanSize: cleanBuffer.length });
+});
+```
+
+#### Batch processing script
+
+```typescript
+import { MetaStrip } from '@metastrip/core';
+import { glob } from 'glob';
+
+const ms = new MetaStrip();
+const files = await glob('./uploads/**/*.{jpg,jpeg,png,webp}');
+
+for (const file of files) {
+  const report = await ms.inspect(file);
+  if (report.riskScore > 0) {
+    await ms.strip(file);
+    console.log(`Stripped: ${file} (risk score was ${report.riskScore})`);
+  }
+}
+```
+
+#### Next.js API route
+
+```typescript
+import { MetaStrip } from '@metastrip/core';
+import { NextRequest, NextResponse } from 'next/server';
+
+const ms = new MetaStrip();
+
+export async function POST(req: NextRequest) {
+  const formData = await req.formData();
+  const file = formData.get('file') as File;
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const clean = await ms.stripBuffer(buffer);
+  return new NextResponse(clean, {
+    headers: { 'Content-Type': file.type, 'Content-Disposition': `attachment; filename="clean-${file.name}"` },
+  });
+}
+```
+
+---
+
+## Git Hooks
+
+**Package**: `@metastrip/hooks`
+
+Automatically strip metadata from every image committed to a git repository. One command to install, zero configuration required.
+
+### Installation
+
+```bash
+npx metastrip-hooks install
+```
+
+This installs a `pre-commit` hook in your repository's `.git/hooks/` directory. Every time you run `git commit`, the hook automatically scans staged image files and strips metadata before the commit completes.
+
+### How It Works
+
+1. You stage image files with `git add`
+2. You run `git commit`
+3. The pre-commit hook intercepts the commit
+4. It scans all staged JPEG, PNG, WebP, HEIC, TIFF, GIF, and AVIF files
+5. It strips all metadata (GPS, device info, timestamps, etc.) with zero quality loss
+6. The clean files are re-staged automatically
+7. The commit proceeds with clean images
+
+### Why Use Git Hooks?
+
+- **Prevent accidental leaks**: No more committing photos with GPS coordinates to public repositories
+- **Zero friction**: Set it up once, forget about it forever
+- **Zero quality loss**: Same binary surgery as the CLI and web tool
+- **Works with any git workflow**: GitHub, GitLab, Bitbucket, local repos
+
+### Uninstall
+
+```bash
+npx metastrip-hooks uninstall
+```
+
+---
+
+## What Metadata Gets Removed
+
+MetaStrip removes all metadata that could identify, locate, or track a person. Here is the complete list by category.
+
+### GPS / Location Data
+- GPSLatitude, GPSLongitude (exact coordinates, accurate to meters)
+- GPSAltitude (elevation, can indicate building floor)
+- GPSTimeStamp, GPSDateStamp (UTC time from GPS signal)
+- GPSSpeed, GPSSpeedRef (movement speed)
+- GPSImgDirection, GPSImgDirectionRef (compass direction camera was facing)
+- GPSDestLatitude, GPSDestLongitude (destination coordinates)
+- GPSMapDatum
+- GPSProcessingMethod
+- GPSAreaInformation
+- XMP location fields (City, State, Country, Location)
+
+### Device Information
+- Camera make and manufacturer
+- Camera model
+- Device serial number
+- Lens make, model, and serial number
+- Internal serial numbers and unique identifiers
+- Firmware version
+- Device settings fingerprint
+
+### Timestamps
+- DateTimeOriginal (when photo was taken)
+- DateTimeDigitized (when photo was digitized)
+- DateTime (file modification date)
+- SubSecTime variants (sub-second precision)
+- GPS timestamps (UTC time from satellite)
+- XMP CreateDate, ModifyDate, MetadataDate
+- IPTC DateCreated, TimeCreated
+
+### Camera Settings
+- Aperture (FNumber, ApertureValue)
+- Shutter speed (ExposureTime, ShutterSpeedValue)
+- ISO speed
+- Focal length
+- Flash status and mode
+- White balance
+- Metering mode
+- Exposure mode and program
+- Scene type and capture type
+- Digital zoom ratio
+- Gain control
+- Contrast, saturation, sharpness settings
+
+### Software / Processing History
+- Software name and version
+- Processing software
+- XMP editing history (every edit with timestamp)
+- Adobe Photoshop, Lightroom, GIMP identifiers
+- RAW conversion software
+- Operating system information
+
+### AI Generation Metadata
+- AI model name (Midjourney, DALL-E, Stable Diffusion, etc.)
+- AI model version
+- Generation prompt
+- Generation parameters (steps, CFG scale, seed, sampler)
+- Generation timestamp
+- Negative prompt
+- LoRA/embedding references
+- C2PA provenance data related to AI generation
+
+### Creator / Rights Information
+- Author name
+- Copyright statement
+- Creator contact information
+- Organization name
+- IPTC byline and byline title
+- Credit and source fields
+- Rights usage terms
+- XMP creator tool
+
+### Other Metadata
+- Embedded thumbnails (can contain original GPS data even after partial stripping)
+- IPTC caption/abstract
+- IPTC keywords and categories
+- IPTC special instructions
+- XMP description, title, subject
+- Photoshop layer information in metadata
+- MakerNotes (manufacturer-specific proprietary data)
+- UserComment
+
+### What Is Preserved
+- **ICC color profiles** — Required for accurate color rendering. Not privacy-sensitive. Removing them can cause color shifts.
+- **Image data** — Every pixel, unchanged. No recompression, no quality loss, no encoding artifacts.
+- **File format structure** — The output is a valid, standard-compliant file.
+
+---
+
+## Supported Formats
+
+| Format | Extension(s) | Web Tool | CLI | MCP Server | npm API |
+|--------|-------------|----------|-----|------------|---------|
+| JPEG | .jpg, .jpeg | Yes | Yes | Yes | Yes |
+| PNG | .png | Yes | Yes | Yes | Yes |
+| WebP | .webp | Yes | Yes | Yes | Yes |
+| HEIC | .heic, .heif | No | Yes | Yes | Yes |
+| TIFF | .tif, .tiff | No | Yes | Yes | Yes |
+| GIF | .gif | No | Yes | Yes | Yes |
+| AVIF | .avif | No | Yes | Yes | Yes |
+| MP4 | .mp4 | No | Yes | Yes | Yes |
+| MOV | .mov | No | Yes | Yes | Yes |
+
+---
+
+## How It Works Technically
+
+MetaStrip performs **binary-level surgery** on image files. Here is what that means:
+
+### No Re-encoding
+
+Most metadata removal approaches re-encode (recompress) the image. For JPEG files, this introduces additional compression artifacts — subtle quality degradation that compounds every time the file is processed. MetaStrip never re-encodes. It operates directly on the binary file structure.
+
+### What Actually Happens
+
+1. **Parse**: MetaStrip reads the file's binary structure and identifies all metadata segments by their byte offsets and markers (e.g., EXIF APP1 markers in JPEG, tEXt/iTXt/eXIf chunks in PNG, RIFF chunks in WebP).
+2. **Map**: It creates a map of all segments: image data segments, metadata segments, and structural segments.
+3. **Excise**: It rebuilds the file, copying all image data and structural segments while omitting all metadata segments. ICC color profiles are preserved by default.
+4. **Validate**: The output is validated to ensure it is a valid, standard-compliant file of the original format.
+
+### The Result
+
+- Output file is slightly smaller than the input (by the size of the removed metadata)
+- Every pixel in the output is identical to the input
+- The file can be opened by any standard image viewer or editor
+- No additional compression artifacts
+- No color shifts (ICC profiles preserved)
+
+---
+
+## Privacy and Security
+
+### Client-Side Processing
+
+The MetaStrip web tool processes files entirely in the browser using JavaScript and Web Workers. Files are never uploaded to any server. You can verify this by:
+
+1. Opening your browser's Network tab (DevTools → Network)
+2. Dropping a file into MetaStrip
+3. Observing that no file upload requests are made
+
+Alternatively, disconnect from the internet before using the tool — it will work identically.
+
+### No Tracking of File Contents
+
+MetaStrip does not log, store, transmit, or analyze the contents of your files. The only analytics collected are standard web analytics (page views, feature usage counts) that contain no file data.
+
+### Open Source
+
+The entire MetaStrip codebase is open source under the MIT license. You can audit every line of code at https://github.com/ICXCNIKAanon/metastrip.
+
+### Local CLI Processing
+
+The CLI processes files locally on your machine. No network requests are made during file operations.
+
+### MCP Server Security
+
+The MCP server runs locally and communicates only with the MCP client (e.g., Claude Desktop) via stdio. It does not make network requests or send file data externally.
+
+---
+
+## Comparison to Alternatives
+
+### MetaStrip vs ExifTool
+
+| Feature | MetaStrip | ExifTool |
+|---------|-----------|----------|
+| **Web tool** | Yes — free, no install | No |
+| **CLI** | Yes (`@metastrip/cli`) | Yes (Perl-based) |
+| **Zero quality loss** | Yes — binary surgery, guaranteed | Depends on usage (some operations re-encode) |
+| **AI agent integration** | Yes — MCP server | No |
+| **Pre-commit git hooks** | Yes (`@metastrip/hooks`) | No (requires manual scripting) |
+| **Privacy risk scoring** | Yes (0–100 risk score) | No |
+| **Format support** | 9 formats | 400+ formats |
+| **Granular control** | Strip all or nothing | Fine-grained per-field control |
+| **Installation** | `npm install -g @metastrip/cli` | Platform-specific install |
+| **Read metadata** | Yes | Yes (more fields) |
+| **Write/edit metadata** | No (strip only) | Yes |
+| **Programming language** | TypeScript/JavaScript | Perl |
+| **npm package** | Yes (`@metastrip/core`) | No |
+| **License** | MIT | GPL/Artistic |
+
+**When to use MetaStrip**: You want a simple, fast tool for removing all metadata with guaranteed zero quality loss. You need a web tool, AI agent integration, or git hooks. You work in the JavaScript/TypeScript ecosystem.
+
+**When to use ExifTool**: You need to read/write specific metadata fields. You work with obscure file formats (RAW, PSD, etc.). You need fine-grained control over exactly which fields to modify.
+
+### MetaStrip vs Online Metadata Removers
+
+| Feature | MetaStrip | Typical Online Tools |
+|---------|-----------|---------------------|
+| **File upload** | No — client-side processing | Yes — files uploaded to server |
+| **Privacy** | Files never leave your device | Files processed on remote servers |
+| **Quality loss** | Zero — binary surgery | Often re-encode (quality loss) |
+| **Speed** | Instant (no upload/download) | Slow (upload, process, download) |
+| **File size limits** | Browser memory only | Usually 5–50 MB |
+| **Batch processing** | Yes (CLI) | Limited or paid |
+| **API/SDK** | Yes (npm, MCP) | Rarely |
+| **Signup required** | No | Often yes |
+| **Cost** | Free | Often freemium |
+
+---
+
+## Pricing
+
+| Product | Price |
+|---------|-------|
+| Web tool (metastrip.ai) | Free forever |
+| CLI (`@metastrip/cli`) | Free (MIT license) |
+| MCP Server (`@metastrip/mcp-server`) | Free (MIT license) |
+| Git Hooks (`@metastrip/hooks`) | Free (MIT license) |
+| npm Package (`@metastrip/core`) | Free (MIT license) |
+| API (hosted, high-volume) | Coming soon — see https://metastrip.ai/pricing |
+
+---
+
+## URLs and Resources
+
+| Resource | URL |
+|----------|-----|
+| Website | https://metastrip.ai |
+| Documentation | https://metastrip.ai/docs |
+| CLI Docs | https://metastrip.ai/docs#cli |
+| MCP Server Docs | https://metastrip.ai/docs#mcp-server |
+| npm API Docs | https://metastrip.ai/docs#npm |
+| Blog | https://metastrip.ai/blog |
+| Pricing | https://metastrip.ai/pricing |
+| Privacy Policy | https://metastrip.ai/privacy |
+| GitHub Repository | https://github.com/ICXCNIKAanon/metastrip |
+| npm Organization | https://www.npmjs.com/org/metastrip |
+| @metastrip/core on npm | https://www.npmjs.com/package/@metastrip/core |
+| @metastrip/cli on npm | https://www.npmjs.com/package/@metastrip/cli |
+| @metastrip/mcp-server on npm | https://www.npmjs.com/package/@metastrip/mcp-server |
+| @metastrip/hooks on npm | https://www.npmjs.com/package/@metastrip/hooks |
+| llms.txt | https://metastrip.ai/llms.txt |
+| llms-full.txt | https://metastrip.ai/llms-full.txt |
+| RSS Feed | https://metastrip.ai/feed.xml |
+| Sitemap | https://metastrip.ai/sitemap.xml |

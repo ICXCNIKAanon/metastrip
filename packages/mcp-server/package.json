@@ -1,0 +1,37 @@
+{
+  "name": "@metastrip/mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for AI agents to strip, inspect, and manage file metadata",
+  "main": "dist/index.js",
+  "bin": {
+    "metastrip-mcp": "dist/index.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@metastrip/core": "*",
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  },
+  "license": "MIT",
+  "keywords": ["metastrip", "mcp", "metadata", "privacy", "ai-agent", "model-context-protocol"],
+  "mcp": {
+    "name": "metastrip",
+    "description": "Strip, inspect, and manage file metadata for privacy and compliance",
+    "tools": ["strip_metadata", "inspect_metadata", "compare_metadata", "batch_strip"],
+    "categories": ["privacy", "security", "file-processing"],
+    "homepage": "https://metastrip.ai"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/metastrip/metastrip",
+    "directory": "packages/mcp-server"
+  }
+}

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <!-- Shield shape -->
+  <path d="M256 28L60 120v152c0 118 84 200 196 228 112-28 196-110 196-228V120L256 28z" fill="url(#g)"/>
+  <!-- Inner cutout for depth -->
+  <path d="M256 60L88 140v132c0 102 72 174 168 198 96-24 168-96 168-198V140L256 60z" fill="#09090b"/>
+  <!-- Shield icon lines -->
+  <path d="M256 100L116 172v100c0 82 56 142 140 164 84-22 140-82 140-164V172L256 100z" fill="none" stroke="url(#g)" stroke-width="4" opacity="0.3"/>
+  <!-- M letter -->
+  <text x="256" y="330" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-weight="800" font-size="200" fill="white">M</text>
+</svg>

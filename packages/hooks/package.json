@@ -1,0 +1,27 @@
+{
+  "name": "@metastrip/hooks",
+  "version": "0.1.0",
+  "description": "Auto-strip metadata from images on git commit. Zero quality loss.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "metastrip-hooks": "dist/cli.js"
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.1",
+    "@types/node": "^20.11.0"
+  },
+  "keywords": ["metastrip", "git-hooks", "pre-commit", "exif", "metadata", "privacy", "strip"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ICXCNIKAanon/metastrip",
+    "directory": "packages/hooks"
+  }
+}
