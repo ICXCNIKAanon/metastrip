@@ -21,16 +21,20 @@ function injectByFormat(
       return injectFakeMetadataWebp(buffer, fake);
     case 'gif':
     case 'svg':
-      // GIF and SVG do not support fake metadata injection — return as-is.
+    case 'pdf':
+    case 'docx':
+    case 'xlsx':
+    case 'pptx':
+      // Office, PDF, and binary formats do not support fake metadata injection — return as-is.
       return buffer;
   }
 }
 
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
 
-ctx.onmessage = (event: MessageEvent<{ buffer: ArrayBuffer; inject?: boolean }>) => {
+ctx.onmessage = async (event: MessageEvent<{ buffer: ArrayBuffer; inject?: boolean; fileName?: string }>) => {
   try {
-    const result = stripMetadata(event.data.buffer);
+    const result = await stripMetadata(event.data.buffer, event.data.fileName);
 
     if (event.data.inject) {
       const fake = getRandomFakeMetadata();

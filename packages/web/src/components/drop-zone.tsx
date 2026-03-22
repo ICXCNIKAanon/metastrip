@@ -3,8 +3,21 @@
 import { useState, useRef, useCallback } from 'react';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
-const ACCEPTED_ATTR = ACCEPTED_TYPES.join(',');
+const ACCEPTED_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+  'image/svg+xml',
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+];
+// Some browsers report Office files with application/zip or application/octet-stream,
+// so we accept by extension as a fallback.
+const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf'];
+const ACCEPTED_ATTR = [...ACCEPTED_TYPES, ...ACCEPTED_EXTENSIONS].join(',');
 
 interface DropZoneProps {
   onFilesSelected: (files: Array<{ file: File; buffer: ArrayBuffer }>) => void;
@@ -25,8 +38,10 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
 
       // Validate all files first
       for (const file of files) {
-        if (!ACCEPTED_TYPES.includes(file.type)) {
-          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, or SVG images.`);
+        const lower = file.name.toLowerCase();
+        const hasAcceptedExt = ACCEPTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
+        if (!ACCEPTED_TYPES.includes(file.type) && !hasAcceptedExt) {
+          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, or PPTX files.`);
           return;
         }
         if (file.size > MAX_FILE_SIZE) {
@@ -165,7 +180,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
             </p>
             {!isDragging && !isProcessing && (
               <p className="text-sm text-text-secondary">
-                JPEG · PNG · WebP · GIF · SVG
+                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX
               </p>
             )}
           </div>
