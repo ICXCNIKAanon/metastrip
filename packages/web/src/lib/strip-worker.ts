@@ -32,6 +32,10 @@ function injectByFormat(
     case 'mov':
     case 'heic':
     case 'avif':
+    case 'm4a':
+    case 'avi':
+    case 'mkv':
+    case 'epub':
       // Office, PDF, audio, video, and binary formats do not support fake metadata injection — return as-is.
       return buffer;
   }

@@ -29,10 +29,21 @@ const ACCEPTED_TYPES = [
   'image/heif',
   // AVIF image format
   'image/avif',
+  // M4A/AAC audio
+  'audio/mp4',
+  'audio/x-m4a',
+  // AVI video
+  'video/x-msvideo',
+  'video/avi',
+  // MKV/WebM video
+  'video/x-matroska',
+  'video/webm',
+  // EPUB ebook
+  'application/epub+zip',
 ];
 // Some browsers report Office files with application/zip or application/octet-stream,
 // and audio/video files with application/octet-stream, so we accept by extension as a fallback.
-const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf', '.mp3', '.wav', '.flac', '.mp4', '.mov', '.m4v', '.m4a', '.heic', '.heif', '.avif'];
+const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf', '.mp3', '.wav', '.flac', '.mp4', '.mov', '.m4v', '.m4a', '.aac', '.heic', '.heif', '.avif', '.avi', '.mkv', '.webm', '.epub'];
 const ACCEPTED_ATTR = [...ACCEPTED_TYPES, ...ACCEPTED_EXTENSIONS].join(',');
 
 interface DropZoneProps {
@@ -57,7 +68,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
         const lower = file.name.toLowerCase();
         const hasAcceptedExt = ACCEPTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
         if (!ACCEPTED_TYPES.includes(file.type) && !hasAcceptedExt) {
-          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, M4V, HEIC, HEIF, or AVIF files.`);
+          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, M4A, AVI, MKV, WebM, HEIC, HEIF, AVIF, or EPUB files.`);
           return;
         }
         if (file.size > MAX_FILE_SIZE) {
@@ -196,7 +207,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
             </p>
             {!isDragging && !isProcessing && (
               <p className="text-sm text-text-secondary">
-                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX · MP3 · WAV · FLAC · MP4 · MOV · HEIC · AVIF
+                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX · MP3 · WAV · FLAC · MP4 · MOV · M4A · AVI · MKV · WebM · HEIC · AVIF · EPUB
               </p>
             )}
           </div>

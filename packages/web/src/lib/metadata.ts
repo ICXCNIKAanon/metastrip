@@ -9,6 +9,10 @@ import { isFlac } from './strip-flac';
 import { isMp4 } from './strip-mp4';
 import { isHeic } from './strip-heic';
 import { isAvif } from './strip-avif';
+import { isM4a } from './strip-m4a';
+import { isAvi } from './strip-avi';
+import { isMkv } from './strip-mkv';
+import { isEpub } from './strip-epub';
 
 export interface MetadataEntry {
   key: string;
@@ -816,15 +820,26 @@ export async function analyzeFile(file: File): Promise<FileAnalysis> {
 
   // Audio files
   if (isMp3(buffer)) return analyzeMp3Buffer(buffer, file.name);
+  // Check AVI before WAV — both RIFF, differentiated by bytes 8-11
+  if (isAvi(buffer)) return analyzeWavBuffer(buffer, file.name);
   if (isWav(buffer)) return analyzeWavBuffer(buffer, file.name);
   if (isFlac(buffer)) return analyzeFlacBuffer(buffer, file.name);
+
+  // MKV/WebM — EBML container (basic detection only)
+  if (isMkv(buffer)) return buildAudioAnalysis(file.name, buffer.byteLength, []);
 
   // HEIC/HEIF and AVIF — ISOBMFF container, same analysis as MP4/MOV
   if (isHeic(buffer)) return analyzeMp4Buffer(buffer, file.name);
   if (isAvif(buffer)) return analyzeMp4Buffer(buffer, file.name);
 
+  // M4A — ISOBMFF container (same analysis as MP4)
+  if (isM4a(buffer)) return analyzeMp4Buffer(buffer, file.name);
+
   // Video files (MP4/MOV — ISOBMFF container)
   if (isMp4(buffer)) return analyzeMp4Buffer(buffer, file.name);
+
+  // EPUB — ZIP-based format with OPF metadata
+  if (isEpub(buffer)) return analyzeOfficeFile(buffer, file.name);
 
   // Office documents (DOCX, XLSX, PPTX) are ZIP archives
   const lower = file.name.toLowerCase();
