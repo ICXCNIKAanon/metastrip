@@ -1,0 +1,81 @@
+---
+title: "Image Metadata Security Risks: What Your Photos Reveal"
+date: "2026-03-10"
+description: "EXIF data in photos exposes your home address, daily routine, device identity, and can be used for stalking, doxxing, and device fingerprinting. Here's what the risks actually look like."
+author: "MetaStrip Team"
+---
+
+Image metadata exposes your home address through GPS coordinates, your daily routine through timestamps, your device identity through serial numbers, and your identity across platforms through hardware fingerprinting. These are not theoretical risks — they are documented attack vectors that have caused real harm.
+
+## GPS Coordinates: Your Home Address in Every Photo
+
+When your phone takes a photo, it embeds the GPS coordinates of your location into the image file by default. The precision is not approximate — five decimal places of latitude and longitude is accurate to within one to two meters.
+
+A photo taken at your kitchen table contains the GPS coordinates of your home. Post it to an online marketplace to sell an item, upload it to a forum, or send it to someone you just met, and you have given them your address without saying a word.
+
+This has been used in documented cases of:
+
+- **Stalking.** People being located at their home or workplace through photos shared on dating apps, social media, and classifieds sites.
+- **Real estate crimes.** Burglars cross-referencing vacation photo timestamps and GPS data to determine when a home is occupied.
+- **Harassment campaigns.** Public figures and journalists having their home addresses identified through photos they shared while believing they were anonymous.
+
+## Timestamps: A Map of Your Movements
+
+EXIF timestamps record the exact date and time a photo was taken — down to the second — in the camera's local timezone. A series of photos published over time creates a detailed record of your movements, schedule, and activities.
+
+Your morning run photos map your route. Lunch photos reveal where you eat and when. Photos from a doctor's office, a religious institution, a legal office, or a support group reveal appointments and affiliations you may not have disclosed.
+
+Timestamps also reveal when you are not home. Vacation photos posted from a hotel — with GPS data showing a resort 500 miles from home — combined with timestamps spanning two weeks is a disclosure that your residence is unoccupied.
+
+## Device Serial Numbers: Tracking Across Accounts
+
+Some cameras and smartphones embed their unique serial number into every image. This identifier is consistent across the device's lifetime and across all accounts that use it.
+
+The consequence is cross-platform and cross-account tracking. If you post photos from the same device to multiple accounts — a professional account and an anonymous account, accounts on different platforms, accounts under different names — the serial number in the EXIF data can link those accounts to the same hardware, and by extension, the same person.
+
+This is called device fingerprinting, and it does not require any network access or tracking cookies. It works entirely from the static data in the image file.
+
+## Device Model Identification
+
+Even without a serial number, the camera make and model embedded in EXIF data is identifying information. "Apple iPhone 16 Pro" combined with a timestamp and location narrows the field considerably for any investigator. Combined with other data points — posting patterns, writing style, or profile details — device model contributes to deanonymization.
+
+## Professional and Operational Security Risks
+
+For certain groups, metadata exposure is a professional and safety risk:
+
+**Journalists and activists** working in sensitive environments or authoritarian countries risk exposing source locations, safe house coordinates, or the identities of individuals photographed through GPS and timestamp data embedded in images shared publicly or with editors.
+
+**Attorneys and healthcare workers** photographing documents or facilities for work purposes embed location data that could reveal privileged information about clients or patients.
+
+**Security researchers and whistleblowers** who publish documentation or evidence risk linking their publishing identity to their physical device and location through EXIF data.
+
+**Corporate intelligence.** Photos taken at manufacturing facilities, offices, or development sites embed GPS coordinates that confirm the location of operations, active projects, or confidential sites.
+
+## Data Aggregation Amplifies Individual Risks
+
+The risk from any single photo's metadata is compounded when data is aggregated. Data brokers, competitive intelligence firms, and bad actors collect and cross-reference metadata from multiple sources:
+
+- GPS from photos cross-referenced with business databases identifies employers
+- Timestamps correlated with public event records identifies attendance
+- Device identifiers linked across platforms builds a behavioral profile
+- Serial numbers matched against warranty registrations links metadata to a named individual
+
+You do not need to be specifically targeted for this aggregation to affect you. Data brokers operate at scale, and once your metadata exists in their systems, it can be sold, leaked, or accessed without your knowledge.
+
+## Strip Metadata Before You Share
+
+The fix is simple and immediate. [MetaStrip](/) removes all metadata — GPS coordinates, timestamps, device identifiers, serial numbers, and every other embedded field — in your browser, with no upload to a server. Drop the photo in, confirm what is present, download the clean version.
+
+For ongoing protection, the MetaStrip CLI integrates into your workflow:
+
+```bash
+metastrip clean ./photos/ --output ./clean/
+```
+
+Or strip specific fields only:
+
+```bash
+metastrip clean photo.jpg --strip-gps --strip-device
+```
+
+See [/docs](/docs) for options and supported formats. Read more about GPS privacy risks specifically in [How GPS Data in Photos Puts Your Privacy at Risk](/blog/gps-privacy-risk).

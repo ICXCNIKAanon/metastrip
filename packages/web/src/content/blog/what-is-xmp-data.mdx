@@ -1,0 +1,87 @@
+---
+title: "What Is XMP Data? XMP vs EXIF vs IPTC Explained"
+date: "2026-03-12"
+description: "XMP is Adobe's XML-based metadata format embedded in image and document files alongside EXIF. Here's how XMP, EXIF, and IPTC differ — and why XMP is the hardest to find and remove."
+author: "MetaStrip Team"
+---
+
+XMP (Extensible Metadata Platform) is an Adobe-developed metadata standard that stores information about a file as an XML block embedded directly inside it. Unlike EXIF — which is a binary format designed specifically for camera images — XMP is a universal format that works across images, PDFs, audio files, and documents. Most modern files contain both.
+
+## The Three Metadata Standards
+
+Digital files, especially images, can carry metadata in three distinct formats simultaneously. Understanding the difference explains why superficial metadata removal often leaves data behind.
+
+### EXIF — Binary, Camera-Specific
+
+EXIF (Exchangeable Image File Format) was developed in the 1990s for digital cameras. It stores data in a compact binary format within the image file header. EXIF is designed specifically for photographic data:
+
+- GPS coordinates (latitude, longitude, altitude)
+- Camera make and model
+- Lens information
+- Shutter speed, aperture, ISO
+- Flash status
+- Capture timestamp
+- Device serial number
+
+EXIF is the format most people think of when they hear "image metadata." It is well-documented, and most metadata tools read it. However, it is limited to images and has a fixed, relatively small set of fields.
+
+### XMP — XML, Universal, Extensible
+
+XMP was created by Adobe in 2001 and is far more flexible than EXIF. It stores data as an XML block — human-readable text — embedded inside the file. Because it is XML-based, XMP can store any field imaginable, not just a predefined set.
+
+XMP is used across file types:
+
+- **JPEG and PNG images** — embedded as a text block in the file
+- **PDF files** — stored in the XMP packet alongside the document information dictionary
+- **Adobe files** (PSD, AI, INDD) — deeply embedded in the file structure
+- **Video files** — embedded in MP4 and MOV containers
+- **Office documents** — embedded via custom XML relationships
+
+XMP fields commonly found in image files include:
+
+- Creator name and contact info
+- Copyright statement
+- Rights and licensing information
+- Description and caption
+- Keywords and categories
+- Software used and editing history (via the `xmpMM:History` field)
+- Document UUID — a unique identifier that links different versions of the same file
+- Derived-from references — tracking which file a derivative was created from
+
+The editing history field is particularly sensitive. Adobe Lightroom, for example, writes a complete history of every adjustment made to an image — every crop, color correction, and export — into the XMP block. This history is invisible in the image itself but fully readable to anyone who inspects the metadata.
+
+### IPTC — Press and News Standard
+
+IPTC (International Press Telecommunications Council) metadata was originally designed for news wire services to attach structured information to press photos. It predates both EXIF and XMP.
+
+IPTC data is stored as a binary block in the image file and typically contains:
+
+- Caption and headline
+- Creator byline and credit line
+- Source and copyright notice
+- City, state, country
+- Date created
+- Keywords and categories
+- Contact information (website, email, phone)
+
+Professional photographers and news organizations use IPTC fields intentionally. But some camera apps and editing tools populate IPTC fields automatically from user account data — which means name, organization, and contact info can be embedded without the photographer's awareness.
+
+## Why XMP Is the Hardest to Find and Remove
+
+Several factors make XMP more difficult to handle than EXIF:
+
+**It is invisible to basic tools.** Simple EXIF viewers often do not parse XMP at all. A file can appear "clean" in a basic metadata reader while containing an extensive XMP block with editing history, document UUIDs, and creator information.
+
+**It can exist in a separate sidecar file.** Adobe applications store XMP in `.xmp` sidecar files alongside the original. If you strip the XMP embedded in an image but do not delete the sidecar, the metadata still exists in the directory.
+
+**It is deeply nested in Adobe formats.** In PSD, AI, and INDD files, XMP data is embedded in multiple locations within the file structure. Removing the top-level XMP packet does not necessarily clear all copies.
+
+**The editing history is detailed.** The `xmpMM:History` field in Lightroom exports contains timestamps, applied presets, crop values, and color grade parameters for every edit session. This data reveals your entire post-processing workflow.
+
+## Removing All Three Formats
+
+Effective metadata removal requires clearing EXIF, XMP, and IPTC simultaneously. Removing only EXIF leaves XMP and IPTC intact — and those can contain equally sensitive information.
+
+[MetaStrip](/) removes all three metadata standards from images and documents in one pass. Drop your file in the browser tool and the full inventory of EXIF, XMP, and IPTC fields appears before removal. Download the clean file with all three formats stripped.
+
+For power users, the MetaStrip CLI handles batch processing across all supported formats. See [/docs](/docs) for format-specific behavior and options.

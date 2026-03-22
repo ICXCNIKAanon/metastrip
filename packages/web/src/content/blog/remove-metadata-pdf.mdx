@@ -1,0 +1,87 @@
+---
+title: "How to Remove Metadata From a PDF"
+date: "2026-03-13"
+description: "PDF files contain hidden author names, company names, revision history, and creation software. Drop your PDF on metastrip.ai to remove it all instantly."
+author: "MetaStrip Team"
+---
+
+Dragging your PDF onto [metastrip.ai](/) removes the author name, company, creation dates, revision count, application name, and all embedded XMP metadata in one step — no install, no upload to a server, no account required.
+
+## What PDF Metadata Actually Contains
+
+PDF files are not just documents — they are containers with a structured metadata layer that most people never see. There are two locations where this data lives.
+
+### The Document Information Dictionary
+
+Every PDF has a standard metadata block inherited from the original PDF specification. It stores:
+
+- **Author** — the full name of the person who created the document, pulled from the OS account or application profile
+- **Title** — often the document's internal title, which may differ from the filename
+- **Subject** — a description field, sometimes auto-populated
+- **Keywords** — tags added by the creator or application
+- **Creator** — the application used to create the original document (e.g., "Microsoft Word for Microsoft 365")
+- **Producer** — the software that converted it to PDF (e.g., "macOS Version 15.3 Quartz PDFContext")
+- **CreationDate** — when the document was first created, including timezone
+- **ModDate** — the last modification date
+
+### XMP Metadata
+
+Modern PDFs also embed XMP (Extensible Metadata Platform) data — an XML block that can duplicate and extend the document information dictionary. XMP metadata often includes:
+
+- Organization or company name
+- Document UUID — a unique identifier that can link multiple versions of the same document
+- Revision history with timestamps
+- Copyright information
+- Custom metadata fields added by enterprise document management systems
+
+Together, these two layers can reveal who created a document, at which company, using what software, at what time, and how many times it was revised.
+
+## Why This Is a Problem
+
+### Legal and Business Documents
+
+A contract, proposal, or report sent as a PDF carries the author's name and company in the metadata. In a negotiation, this can reveal who drafted the document and which party's boilerplate is being used.
+
+### Freelancers and Contractors
+
+If you create documents for clients using your own software, the PDF metadata contains your name and your software's name — not the client's. This can expose that a client is outsourcing work they claim to produce internally.
+
+### Anonymous Publishing and Whistleblowing
+
+PDFs intended to be shared anonymously — leaked documents, anonymous reports, academic submissions under blind review — frequently reveal their author through metadata. This has caused real-world harm.
+
+### Revision Count
+
+The revision count embedded in PDF metadata reveals how much work went into a document. A proposal that shows 47 revisions tells the recipient something about your process. Some document management systems also embed revision diffs.
+
+## How to Strip PDF Metadata
+
+**[MetaStrip](/)** handles PDF metadata removal entirely in your browser. Drop the PDF onto the tool, inspect what is present, then download a clean version with all metadata fields cleared. The document content — text, images, formatting, fonts, embedded links — is completely unchanged.
+
+For developers and bulk workflows, the MetaStrip CLI processes PDFs alongside other file types:
+
+```bash
+metastrip clean ./documents/ --output ./clean/
+```
+
+The `--formats pdf` flag limits processing to PDFs if you are working with a mixed directory.
+
+### Other Methods
+
+**Adobe Acrobat Pro** includes a Document Properties panel and a Sanitize Document function that removes metadata. It is thorough but requires an Acrobat subscription.
+
+**LibreOffice** can strip metadata when re-saving a document, though it is inconsistent with XMP fields.
+
+**ExifTool** reads and writes PDF metadata from the command line:
+
+```bash
+exiftool -all:all= yourfile.pdf
+```
+
+This strips all metadata but modifies the original file. Use the `-o cleanfile.pdf` flag to preserve the original.
+
+## Before You Send That PDF
+
+Check what your PDFs contain before sharing them. Open any PDF on [metastrip.ai](/) and the full metadata inventory appears instantly — author, company, creation software, dates, and XMP data all visible in plain language before you decide what to remove.
+
+See [/docs](/docs) for full documentation on PDF format support.

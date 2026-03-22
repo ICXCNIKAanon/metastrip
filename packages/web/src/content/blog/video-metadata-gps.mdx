@@ -1,0 +1,73 @@
+---
+title: "How to Remove GPS and Metadata From Video Files"
+date: "2026-03-06"
+description: "MP4 and MOV videos contain GPS coordinates, camera model, creation date, and encoding software in the ISOBMFF container. MetaStrip removes the entire user data atom while preserving video and audio quality."
+author: "MetaStrip Team"
+---
+
+MP4 and MOV videos embed GPS coordinates, camera model, creation date, encoding software, and device identifiers inside the ISOBMFF container structure — and MetaStrip removes all of it by stripping the user data atom while leaving every frame of video and audio completely untouched.
+
+## How Video Metadata Is Stored
+
+Unlike images — where metadata sits in a file header before the pixel data — video files use a container format that organizes all data into a hierarchical structure of boxes (also called atoms). The ISOBMFF (ISO Base Media File Format) is the container used by MP4 and MOV files.
+
+Within this container, a specific box called the **`udta` (user data) atom** stores the file's metadata. Everything inside `udta` is metadata — none of it is video or audio content.
+
+### What the `udta` Box Contains
+
+The user data atom can hold a large number of metadata fields. For videos recorded on smartphones, the typical contents include:
+
+- **GPS coordinates** — latitude, longitude, and altitude of where the video was recorded, stored in the `©xyz` sub-atom in QuickTime/MOV format or in the `loci` atom in some MP4 implementations
+- **Creation date** — exact timestamp when recording started
+- **Camera make and model** — the device that recorded the video
+- **Encoding software** — the application that wrote or processed the file (e.g., "com.apple.quicktime.quicktime 230.0")
+- **Director / author** — user account name from the device, sometimes embedded automatically
+- **Content identifier** — a UUID or device-specific identifier
+
+### Apple-Specific QuickTime Metadata
+
+iPhones and iPads record video in QuickTime MOV format (though modern iPhones can also record directly to MP4). QuickTime metadata is stored using four-character code atoms, many prefixed with `©` to indicate copyright or ownership:
+
+- `©nam` — track name
+- `©ART` — artist / author
+- `©xyz` — GPS coordinates in ISO 6709 format (e.g., `+37.7749-122.4194+020.0/`)
+- `©day` — creation date
+- `©swr` — software name and version
+
+The `©xyz` atom is the GPS field. It stores coordinates as a string in the format `+latitude+longitude+altitude/`. This is precise to four or more decimal places — accurate to within 10 meters.
+
+### Android and Third-Party App Metadata
+
+Android video files (typically MP4) use a similar structure but often include additional fields from the camera app vendor. Some Android OEMs write proprietary metadata boxes with device serial numbers and model-specific data. Third-party camera apps add their own metadata blocks, sometimes including settings like HDR mode, stabilization status, and frame rate targets.
+
+### XMP Metadata in Video
+
+Modern cameras and video editing software (Premiere Pro, DaVinci Resolve, Final Cut Pro) embed XMP metadata inside video containers — the same Adobe XML format used in images. This can include:
+
+- Editor's name and organization
+- Project name and sequence information
+- Color grade information
+- Rights and licensing data
+- Editing history with timestamps
+
+## The Privacy Risk Is the Same as Photos
+
+Video metadata creates identical privacy risks to image metadata — because it is the same data. A video taken at home contains your home's GPS coordinates. A video taken during a commute timestamps your route. A video of a child's birthday party reveals your home address, the date, and your device model.
+
+Unlike photos, videos are often shared in contexts that feel more private — direct messages, family group chats — but the metadata travels in all of those contexts regardless. Email attachments, iMessage videos, shared links to video files, and downloads from private social media posts all carry the original metadata.
+
+## Removing Video Metadata
+
+[MetaStrip](/) strips the `udta` atom — and all metadata within it — from MP4 and MOV files without touching the video or audio streams. The encoded frames, audio tracks, subtitle tracks, chapter markers, and codec data are all preserved exactly as they were. Only the metadata containers are removed.
+
+Drop a video file onto [metastrip.ai](/) to inspect the full metadata inventory before removing it. The GPS coordinates, creation timestamp, camera model, and all other fields are displayed in plain language.
+
+For bulk processing:
+
+```bash
+metastrip clean ./videos/ --output ./clean/
+```
+
+Processing is fast — MetaStrip does not decode or re-encode the video stream. The operation is a container-level edit, making it nearly instant regardless of video resolution or duration.
+
+See [/docs](/docs) for supported video formats and notes on container-level vs. stream-level metadata in specific codecs.

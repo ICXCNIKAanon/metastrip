@@ -1,0 +1,92 @@
+---
+title: "How to Check If a Photo Has GPS Data"
+date: "2026-03-14"
+description: "Drop a photo on metastrip.ai and it shows the exact GPS coordinates on a map instantly. Here are four ways to check whether a photo contains location data."
+author: "MetaStrip Team"
+---
+
+The fastest way to check if a photo has GPS data is to drop it on [metastrip.ai](/) — if coordinates are present, they appear on an interactive map within seconds, showing you the exact location where the photo was taken.
+
+Here are four methods, from fastest to most technical.
+
+## Method 1: MetaStrip (Browser, Instant, No Install)
+
+Go to [metastrip.ai](/) and drop your image file onto the tool. MetaStrip reads the EXIF data entirely in your browser — the file never leaves your device.
+
+If GPS coordinates are present, you will see:
+
+- **GPSLatitude** and **GPSLongitude** — the exact position in decimal degrees
+- **GPSAltitude** — elevation above sea level
+- **GPSTimeStamp** — UTC time from the GPS signal
+- An **interactive map** pinpointing the exact location
+
+If no GPS data is present, those fields simply will not appear. MetaStrip also shows every other metadata field in the file — device model, timestamps, editing software, and more.
+
+This method works on any device with a browser — no install, no account, no upload to a server.
+
+## Method 2: ExifTool (Command Line)
+
+ExifTool is the gold-standard CLI tool for reading metadata. If you have it installed, run:
+
+```bash
+exiftool -GPS* yourphoto.jpg
+```
+
+The `-GPS*` flag filters for all GPS-related fields. Output looks like this if coordinates are present:
+
+```
+GPS Latitude Ref                : North
+GPS Longitude Ref               : West
+GPS Latitude                    : 37 deg 46' 27.60" N
+GPS Longitude                   : 122 deg 25' 58.79" W
+GPS Altitude                    : 16.4 m Above Sea Level
+GPS Time Stamp                  : 18:32:44
+GPS Date Stamp                  : 2026:01:15
+```
+
+To convert to decimal degrees (easier to paste into a map):
+
+```bash
+exiftool -c "%.6f" -GPSPosition yourphoto.jpg
+```
+
+Install ExifTool on macOS with `brew install exiftool`, or download the Windows executable from the ExifTool website.
+
+## Method 3: macOS Preview
+
+macOS has GPS reading built into the Preview app — no install required.
+
+1. Open your image in **Preview**
+2. Go to **Tools → Show Inspector** (or press `Cmd+I`)
+3. Click the **GPS** tab
+
+If the tab is grayed out or missing, no GPS data is present. If coordinates exist, you will see them displayed, and clicking "Show in Maps" opens the location in Apple Maps.
+
+This method only works on macOS and only reads data — it does not let you remove it.
+
+## Method 4: Windows File Properties
+
+On Windows 10 and 11:
+
+1. Right-click the image file
+2. Select **Properties**
+3. Click the **Details** tab
+4. Scroll down to the **GPS** section
+
+If GPS latitude and longitude appear, the file contains location data. Windows also shows a "Remove Properties and Personal Information" link at the bottom of the Details tab — but this method is less thorough than dedicated tools, and it modifies the original file without creating a copy.
+
+## Converting Coordinates to a Real Address
+
+If you find GPS coordinates and want to see the actual address, paste the decimal degree format into Google Maps or use a reverse geocoding tool. For example, `37.774300, -122.432997` resolves to a specific address in San Francisco.
+
+This is exactly what a stranger could do with the coordinates embedded in a photo you share.
+
+## After You Check — Remove It
+
+Once you know a photo has GPS data, [MetaStrip](/) removes it with one click. Or use the MetaStrip CLI for bulk cleanup:
+
+```bash
+metastrip clean ./photos/ --strip-gps --output ./clean/
+```
+
+See also: [/docs](/docs) for full documentation on supported formats and CLI options.

@@ -1,0 +1,83 @@
+---
+title: "How to Remove ID3 Tags From MP3 Files"
+date: "2026-03-07"
+description: "MP3 files contain ID3v1 and ID3v2 tags with artist, album, year, genre, comments, and cover art. MetaStrip removes both tag versions while keeping the audio data untouched."
+author: "MetaStrip Team"
+---
+
+MP3 files contain ID3 tags — structured metadata blocks holding artist name, album title, year, genre, track number, comments, lyrics, and embedded cover art. [MetaStrip](/) removes both ID3v1 and ID3v2 tags from MP3 files in one step, leaving the audio data completely untouched.
+
+## What ID3 Tags Contain
+
+ID3 is the metadata standard for MP3 files. It exists in two versions with different technical structures and different locations within the file.
+
+### ID3v1 — Fixed-Size Trailer
+
+ID3v1 is the original tag format from 1996. It is a fixed-length 128-byte block appended to the very end of the MP3 file. Because the size is fixed, each field is capped at a specific character count:
+
+- **Song title** — up to 30 characters
+- **Artist** — up to 30 characters
+- **Album** — up to 30 characters
+- **Year** — 4 characters
+- **Comment** — up to 30 characters (or 28 with a track number)
+- **Track number** — 1 byte (an ID3v1.1 extension)
+- **Genre** — 1 byte index into a predefined list of 192 genres
+
+ID3v1 is simple and widely compatible but severely limited. Its 30-character field limits often truncate long titles, and it cannot store cover art, lyrics, or any extended information.
+
+### ID3v2 — Variable-Size Header
+
+ID3v2 is a much more capable format, placed at the beginning of the MP3 file rather than the end. Its size is variable, and it uses a frame-based structure where each piece of data is a labeled frame that can be any length.
+
+ID3v2 supports a large number of frame types. Common ones include:
+
+| Frame ID | Contents |
+|---|---|
+| TIT2 | Song title |
+| TPE1 | Lead artist / performer |
+| TALB | Album name |
+| TDRC | Recording year |
+| TRCK | Track number / total tracks |
+| TCON | Genre |
+| COMM | Comment (with language tag) |
+| USLT | Unsynchronized lyrics |
+| APIC | Attached picture (cover art) |
+| TENC | Encoded by |
+| TSSE | Encoding software and settings |
+| TORY | Original release year |
+| TXXX | User-defined text frames (any key/value pair) |
+| PRIV | Private frame (arbitrary binary data from software) |
+
+The APIC frame deserves special attention: embedded cover art is stored as a full JPEG or PNG image inside the MP3 file. A single album cover can add 500KB–2MB to each MP3 in a collection. For files being shared or stored at scale, removing cover art significantly reduces file size.
+
+The PRIV frame is used by some software to embed proprietary data — purchase records, DRM markers, application-specific identifiers — that is opaque to users and rarely documented.
+
+The TXXX frame allows any software to store arbitrary key-value pairs. Music management software, streaming services, and editing tools use TXXX extensively and not always transparently.
+
+### Both Versions Can Coexist
+
+An MP3 file can contain both an ID3v2 header at the start and an ID3v1 trailer at the end simultaneously. This is common in files that originated with one application and were later processed by another. Removing only one version leaves the other intact. Complete removal requires stripping both.
+
+## Why You Might Want to Remove ID3 Tags
+
+**Privacy in shared files.** Files ripped or encoded on your own machine often include the encoding software name and settings in TSSE, and sometimes the encoder's username in TENC. Files purchased from some stores include purchase metadata linking the file to your account.
+
+**Size reduction.** Embedded cover art, lyrics, and extensive tag data can add megabytes to an MP3 file. Stripping all ID3 data produces a smaller file with identical audio.
+
+**Correcting or starting fresh.** Poorly tagged files with incorrect or conflicting ID3v1 and ID3v2 data are easier to retag from scratch after a full strip.
+
+**Removing PRIV frames and DRM markers.** Some distribution platforms embed proprietary identifiers in PRIV frames that can link a file to a specific account or purchase transaction.
+
+## Removing ID3 Tags With MetaStrip
+
+[MetaStrip](/) removes both ID3v1 and ID3v2 tags from MP3 files in the browser. Drop the file onto the tool to inspect the full tag inventory — every frame and its contents — then strip everything with one click. The audio stream is preserved without any recompression or quality loss.
+
+For batch processing:
+
+```bash
+metastrip clean ./music/ --output ./clean/
+```
+
+The CLI processes entire directories of MP3 files, removing both tag versions from each file and writing clean copies to the output directory.
+
+See [/docs](/docs) for documentation on other supported audio formats including FLAC, OGG, M4A, and WAV.

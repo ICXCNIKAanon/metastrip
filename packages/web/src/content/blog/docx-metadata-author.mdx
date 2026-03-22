@@ -1,0 +1,106 @@
+---
+title: "How to Remove the Author Name From a Word Document"
+date: "2026-03-08"
+description: "Every Word document contains your full name, company, manager, editing time, and revision history in hidden metadata. Drop it on metastrip.ai to remove everything."
+author: "MetaStrip Team"
+---
+
+Every Word document contains your full name, company name, manager's name, total editing time, revision count, and creation software in hidden metadata — stored in XML files inside the .docx container. Drop it on [metastrip.ai](/) to remove all of it instantly.
+
+## What a .docx File Actually Contains
+
+A .docx file is not a single file. It is a ZIP archive containing a folder structure with XML files, images, fonts, and settings. Two of those XML files are dedicated entirely to metadata about the document and the person who created it.
+
+### docProps/core.xml
+
+This file contains the core document properties defined by the Open Packaging Convention:
+
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties>
+  <dc:title>Q4 Budget Proposal - CONFIDENTIAL</dc:title>
+  <dc:creator>Jane Doe</dc:creator>
+  <cp:lastModifiedBy>Jane Doe</cp:lastModifiedBy>
+  <cp:revision>23</cp:revision>
+  <dcterms:created>2026-02-14T09:23:11Z</dcterms:created>
+  <dcterms:modified>2026-03-07T16:44:52Z</dcterms:modified>
+</cp:coreProperties>
+```
+
+This file captures:
+
+- **dc:creator** — the full name of the person who created the document, pulled from the Word account or Windows user profile
+- **cp:lastModifiedBy** — the full name of whoever last saved the document
+- **cp:revision** — the total number of times the document has been saved
+- **dcterms:created** — the original creation timestamp with timezone
+- **dcterms:modified** — the last modification timestamp
+
+### docProps/app.xml
+
+This file contains application-level metadata:
+
+```xml
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Properties>
+  <Application>Microsoft Office Word</Application>
+  <DocSecurity>0</DocSecurity>
+  <Company>Acme Corporation</Company>
+  <Manager>John Smith</Manager>
+  <TotalTime>347</TotalTime>
+  <Pages>12</Pages>
+  <Words>4821</Words>
+  <Template>Normal.dotx</Template>
+</Properties>
+```
+
+This captures:
+
+- **Company** — the organization name from the Word account profile
+- **Manager** — the manager's name from the account profile (often populated by enterprise IT configurations)
+- **TotalTime** — the cumulative time in minutes that the document has been open for editing
+- **Application** — the exact software version used
+- **Template** — which document template was used to create the file
+
+## Why This Data Is Sensitive
+
+### The Author Name Contradiction
+
+You may share a document externally — to a client, a regulator, a publication, a negotiating counterpart — under a company name, a pseudonym, or anonymously. The `dc:creator` field contains the real name associated with the Word account, regardless of how the document is branded or attributed externally.
+
+### Company and Manager Reveal Org Structure
+
+The Company and Manager fields in app.xml are populated from Microsoft 365 account data in enterprise environments. A document created by a contractor reveals the contractor's employer, not the client's. A document created by a subordinate reveals that person's manager. This organizational data can be sensitive in legal disputes, negotiations, or anonymous disclosures.
+
+### Revision Count Reveals Effort
+
+A proposal showing 47 revisions tells the recipient how much iteration went into the document and may signal uncertainty or internal disagreement. A legal filing showing 1 revision raises different questions. The revision counter is an unintentional disclosure.
+
+### Total Editing Time Reveals Workflow
+
+The TotalTime field tracks cumulative minutes with the document open. Combined with creation and modification timestamps, this can reveal whether a document was dashed off quickly or labored over — information you may not want to share.
+
+### Template Name Reveals Internal Tooling
+
+The template field shows which Word template was used. Internal templates often have names that reveal confidential project names, internal classifications, or department identifiers.
+
+## Removing Author Metadata From Word Documents
+
+[MetaStrip](/) handles .docx metadata removal entirely in your browser. Drop the file onto the tool, review the full inventory from both core.xml and app.xml, then download a clean version with all identifying fields cleared. The document content — text, formatting, images, tables, tracked changes, and comments — is completely unchanged.
+
+For bulk processing, the MetaStrip CLI handles entire directories of .docx files:
+
+```bash
+metastrip clean ./documents/ --output ./clean/
+```
+
+### Removing in Word Itself
+
+Microsoft Word includes a built-in Document Inspector:
+
+1. Go to **File → Info → Check for Issues → Inspect Document**
+2. Run the inspection
+3. Click **Remove All** next to "Document Properties and Personal Information"
+
+Word's inspector is functional but less thorough with XMP data and does not give you a clear inventory of what it found before removing it. It also modifies the original file rather than creating a clean copy.
+
+See [/docs](/docs) for full documentation on supported Office formats, including .xlsx and .pptx files which follow the same metadata structure.

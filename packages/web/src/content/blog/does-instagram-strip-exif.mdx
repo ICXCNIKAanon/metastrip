@@ -1,0 +1,59 @@
+---
+title: "Does Instagram Strip EXIF Data From Your Photos?"
+date: "2026-03-15"
+description: "Instagram removes most EXIF metadata on upload — but not every platform does. Here's what each major platform actually strips, and why you should clean photos before sharing regardless."
+author: "MetaStrip Team"
+---
+
+Yes, Instagram strips most EXIF data when you upload a photo — but not all platforms do, and even Instagram's behavior is not guaranteed to be consistent across all devices, upload methods, and API changes. The safest approach is to remove metadata before you share, not after.
+
+## What Instagram Actually Removes
+
+When you upload a photo through the Instagram app, the platform re-encodes the image and discards most EXIF metadata in the process. This includes GPS coordinates, device model, serial number, and camera settings. The resulting image on Instagram's servers is generally clean of the most sensitive data.
+
+However, "most" is not "all." Some technical metadata may persist depending on the upload method. And Instagram's behavior via the API — used by third-party tools and some desktop workflows — has historically been less consistent than the mobile app.
+
+## Platform-by-Platform Comparison
+
+Not every platform treats metadata the same way. Here is how the major ones behave:
+
+| Platform | GPS Data | Device Model | Timestamps | Other EXIF |
+|---|---|---|---|---|
+| Instagram | Stripped | Stripped | Stripped | Stripped |
+| Facebook | Stripped | Stripped | Stripped | Stripped |
+| Twitter / X | Stripped | Stripped | Stripped | Stripped |
+| WhatsApp | Stripped | Kept | Kept | Partially kept |
+| Telegram | Kept (files) | Kept | Kept | Kept |
+| iMessage | Kept | Kept | Kept | Kept |
+| Email attachments | Kept | Kept | Kept | Kept |
+| Dropbox / Drive | Kept | Kept | Kept | Kept |
+| Craigslist | Kept | Kept | Kept | Kept |
+| eBay | Kept | Kept | Kept | Kept |
+
+WhatsApp is worth calling out specifically: it strips GPS coordinates but preserves device model, camera settings, and other identifying EXIF fields. That is enough information for device fingerprinting — linking photos across accounts by matching device hardware signatures.
+
+Messaging apps that send photos as files (Telegram with "Send as File," Signal in some configurations, Discord) typically preserve all metadata exactly as uploaded.
+
+## Why You Should Not Rely on Platforms to Strip for You
+
+Even for platforms that do strip metadata today, three problems remain.
+
+**Policy can change.** Platform data handling policies change without notice. A platform that strips today may not strip after an acquisition, a product update, or a policy revision.
+
+**Direct sharing bypasses stripping.** When you send a photo through iMessage, email, AirDrop, or a direct file transfer, no platform intermediary strips anything. The full original file — with every embedded coordinate, device ID, and timestamp — is delivered intact.
+
+**You cannot undo it after the fact.** Once a file with metadata has been shared or downloaded, that metadata exists on someone else's device. A platform stripping metadata from its own stored copy does not affect copies that were already sent or downloaded.
+
+## Strip Before You Share
+
+The only reliable protection is removing metadata before the photo leaves your device. [MetaStrip](/) does this in your browser — drop the photo in, see every field that would be sent, and download a clean version with a single click. No upload, no server, no account.
+
+For photos you share regularly or in bulk, the MetaStrip CLI processes entire directories at once:
+
+```bash
+metastrip clean ./photos/ --output ./clean/
+```
+
+Zero quality loss. Zero recompression. Every pixel identical to the original.
+
+Do not assume the platform will handle it. Strip first, then share.

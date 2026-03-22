@@ -1,0 +1,83 @@
+---
+title: "How to Strip Metadata Before Uploading Photos"
+date: "2026-03-09"
+description: "Use MetaStrip's browser extension to automatically strip metadata from every image you upload, or use the web tool at metastrip.ai for one-time manual stripping."
+author: "MetaStrip Team"
+---
+
+Use the [MetaStrip browser extension](/) to automatically strip metadata from every image as you upload it — no manual steps, no remembering, no workflow changes. Or use [metastrip.ai](/) directly for one-time manual cleaning before you share.
+
+## Why Stripping Before Upload Matters
+
+By the time a photo reaches a platform's servers, stripping has to happen on your device or not at all. You cannot retrieve a file that has already been uploaded and shared. You cannot know in advance whether the recipient's platform or client will strip it. And even platforms that do strip metadata still receive the full original file before processing it — your GPS coordinates and device identifiers are transmitted to their servers regardless of what they ultimately store.
+
+Stripping before upload means the metadata never leaves your device. Not to the platform, not in transit, not anywhere.
+
+## Option 1: Browser Extension (Automatic, Zero Friction)
+
+The MetaStrip browser extension intercepts image files at the moment of upload — when you click "attach," drag a file onto a form, or use a file picker — and strips the metadata before the file is sent.
+
+This works on:
+
+- File attachment dialogs in email clients (Gmail, Outlook Web)
+- Image upload fields on social platforms, forums, and classifieds
+- File input fields on any website
+- Drag-and-drop upload zones
+
+The extension strips metadata automatically in the background. No extra clicks, no separate step. You can configure it to strip silently every time, or to show a quick confirmation dialog with the metadata it found before removing it.
+
+Install the MetaStrip extension from the Chrome Web Store or Firefox Add-ons. It is free.
+
+## Option 2: Web Tool (Manual, One-Time)
+
+For occasional use or for files you want to inspect before sharing, [metastrip.ai](/) handles the full workflow in a single browser session:
+
+1. Drop your file onto the tool
+2. Review the complete metadata inventory — GPS coordinates, device model, timestamps, author fields, and more
+3. Click **Strip & Download** to get a clean copy
+
+The entire process runs in your browser. The file never leaves your device — no upload, no server, no account. This works for images (JPEG, PNG, WebP, HEIC), PDFs, Word documents, audio files, and more.
+
+## Option 3: CLI (Batch, Developer Workflows)
+
+For developers, power users, and anyone processing large volumes of files, the MetaStrip CLI handles bulk stripping from the command line:
+
+```bash
+# Strip all images in a directory
+metastrip clean ./photos/ --output ./clean/
+
+# Strip a single file
+metastrip clean photo.jpg --output photo-clean.jpg
+
+# Strip GPS only, keep other metadata
+metastrip clean ./photos/ --strip-gps --output ./clean/
+
+# Process multiple file types
+metastrip clean ./assets/ --formats jpg,png,pdf,docx --output ./clean/
+```
+
+The CLI preserves the original files and writes clean copies to the output directory. No quality loss, no recompression.
+
+## Option 4: Git Pre-Commit Hook
+
+If you are a developer who commits image assets to a repository, the MetaStrip git integration catches metadata before it enters version control:
+
+```bash
+metastrip install-hook
+```
+
+This installs a pre-commit hook that scans staged image files for metadata and blocks the commit if any is found, prompting you to strip before committing. Useful for preventing GPS coordinates or author names from entering a public repository's history.
+
+## Choosing the Right Method
+
+| Use Case | Recommended Method |
+|---|---|
+| Everyday sharing on any site | Browser extension |
+| Occasional sharing, want to inspect first | Web tool at metastrip.ai |
+| Bulk processing before posting | CLI |
+| Preventing metadata in code repos | Git hook |
+| Direct file sharing (email, messaging) | Web tool or CLI |
+
+The browser extension covers the largest share of day-to-day exposure automatically. The web tool and CLI handle everything else.
+
+See [/docs](/docs) for installation instructions and full configuration options.
