@@ -52,6 +52,72 @@ Now any AI agent can use these tools:
 - **compare_metadata** — Before/after metadata diff
 - **batch_strip** — Process multiple files at once
 
+### GitHub Action
+
+Automatically strip metadata from images in pull requests. Zero quality loss — binary-level stripping, no re-encoding.
+
+```yaml
+# .github/workflows/strip-metadata.yml
+name: Strip Image Metadata
+
+on:
+  pull_request:
+    paths: ['**.jpg', '**.jpeg', '**.png', '**.webp']
+
+permissions:
+  contents: write
+
+jobs:
+  strip-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: ICXCNIKAanon/metastrip@v1
+        with:
+          path: '.'
+          commit: 'true'
+
+      - name: Push changes
+        run: git push
+```
+
+#### Inputs
+
+| Input | Default | Description |
+|-------|---------|-------------|
+| `path` | `.` | Directory to scan for images |
+| `commit` | `true` | Auto-commit stripped files |
+| `commit-message` | `chore: strip image metadata [MetaStrip]` | Commit message |
+| `webhook-url` | `` | Webhook URL to POST results to (Slack, Discord, or any endpoint) |
+| `notify` | `true` | Send notification when files are stripped (requires `webhook-url`) |
+
+#### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `files-stripped` | Number of files that had metadata removed |
+| `files-clean` | Number of files already clean |
+| `files-total` | Total number of image files scanned |
+
+#### Slack / Discord notifications
+
+Add a `webhook-url` to get a notification whenever MetaStrip cleans images. The payload is compatible with Slack Incoming Webhooks, Discord webhooks, and any generic HTTP endpoint.
+
+```yaml
+      - uses: ICXCNIKAanon/metastrip@main
+        with:
+          path: '.'
+          commit: 'true'
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+```
+
+Store your webhook URL as a [GitHub Actions secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets) (`SLACK_WEBHOOK_URL` or `DISCORD_WEBHOOK_URL`). Notifications are only sent when at least one file is actually stripped — no noise on clean runs. Set `notify: 'false'` to disable.
+
+See [examples/github-action-workflow.yml](examples/github-action-workflow.yml) for a full workflow example.
+
 ### Library (npm)
 ```bash
 npm install @metastrip/core
@@ -121,8 +187,12 @@ metastrip/
 ├── packages/
 │   ├── core/           # Core processing engine
 │   ├── cli/            # CLI tool
+│   ├── hooks/          # Git hooks — auto-strip on commit
 │   ├── mcp-server/     # MCP server for AI agents
 │   └── web/            # Next.js web application
+├── action.yml          # GitHub Action definition
+├── action/strip.mjs    # GitHub Action runner script
+├── examples/           # Example workflows
 ├── .github/workflows/  # CI/CD
 └── package.json        # Workspace root
 ```

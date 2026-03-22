@@ -1,0 +1,113 @@
+name: 'MetaStrip — Strip Image Metadata'
+description: 'Automatically strip GPS, device info, and hidden metadata from images in your repository. Zero quality loss.'
+author: 'ICXCNIKAanon'
+
+branding:
+  icon: 'shield'
+  color: 'green'
+
+inputs:
+  path:
+    description: 'Directory to scan for images'
+    required: false
+    default: '.'
+  commit:
+    description: 'Whether to commit changes automatically'
+    required: false
+    default: 'true'
+  commit-message:
+    description: 'Commit message when changes are made'
+    required: false
+    default: 'chore: strip image metadata [MetaStrip]'
+  webhook-url:
+    description: 'Webhook URL to POST results to (Slack, Discord, or any endpoint)'
+    required: false
+    default: ''
+  notify:
+    description: 'Send notification when files are stripped (requires webhook-url)'
+    required: false
+    default: 'true'
+
+outputs:
+  files-stripped:
+    description: 'Number of files that had metadata removed'
+    value: ${{ steps.strip.outputs.stripped }}
+  files-clean:
+    description: 'Number of files already clean'
+    value: ${{ steps.strip.outputs.clean }}
+  files-total:
+    description: 'Total number of image files scanned'
+    value: ${{ steps.strip.outputs.total }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install MetaStrip hooks
+      shell: bash
+      run: npm install @metastrip/hooks
+
+    - name: Strip metadata from images
+      id: strip
+      shell: bash
+      run: node ${{ github.action_path }}/action/strip.mjs "${{ inputs.path }}"
+
+    - name: Commit changes
+      if: inputs.commit == 'true'
+      shell: bash
+      run: |
+        git config user.name "MetaStrip Bot"
+        git config user.email "bot@metastrip.ai"
+        git add -A
+        if git diff --cached --quiet; then
+          echo "MetaStrip: No metadata changes to commit"
+        else
+          git commit -m "${{ inputs.commit-message }}"
+          echo "MetaStrip: Changes committed"
+        fi
+
+    - name: Send notification
+      if: inputs.webhook-url != '' && inputs.notify == 'true' && steps.strip.outputs.stripped != '0'
+      shell: bash
+      run: |
+        STRIPPED="${{ steps.strip.outputs.stripped }}"
+        CLEAN="${{ steps.strip.outputs.clean }}"
+        REPO="${{ github.repository }}"
+        BRANCH="${{ github.ref_name }}"
+        SHA="${{ github.sha }}"
+        ACTOR="${{ github.actor }}"
+
+        # Build JSON payload (compatible with Slack, Discord, and generic webhooks)
+        PAYLOAD=$(cat <<JSONEOF
+        {
+          "text": "🛡️ MetaStrip: Stripped metadata from ${STRIPPED} image(s) in ${REPO}",
+          "blocks": [
+            {
+              "type": "section",
+              "text": {
+                "type": "mrkdwn",
+                "text": "🛡️ *MetaStrip: Metadata stripped*\n\n• *Files cleaned:* ${STRIPPED}\n• *Already clean:* ${CLEAN}\n• *Repo:* ${REPO}\n• *Branch:* ${BRANCH}\n• *By:* ${ACTOR}"
+              }
+            }
+          ],
+          "username": "MetaStrip",
+          "icon_emoji": ":shield:",
+          "embeds": [
+            {
+              "title": "🛡️ MetaStrip: Metadata stripped",
+              "description": "**Files cleaned:** ${STRIPPED}\n**Already clean:** ${CLEAN}\n**Repo:** ${REPO}\n**Branch:** ${BRANCH}\n**By:** ${ACTOR}",
+              "color": 1108385
+            }
+          ]
+        }
+        JSONEOF
+        )
+
+        curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d "$PAYLOAD" \
+          "${{ inputs.webhook-url }}" > /dev/null 2>&1 || echo "MetaStrip: Webhook notification failed (non-blocking)"

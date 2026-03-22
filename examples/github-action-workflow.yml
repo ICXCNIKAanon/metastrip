@@ -1,0 +1,35 @@
+# Example: Add to your repo's .github/workflows/strip-metadata.yml
+#
+# This workflow automatically strips GPS, device info, timestamps,
+# and other hidden metadata from images in pull requests.
+# Zero quality loss — binary-level stripping, no re-encoding.
+
+name: Strip Image Metadata
+
+on:
+  pull_request:
+    paths:
+      - '**.jpg'
+      - '**.jpeg'
+      - '**.png'
+      - '**.webp'
+
+permissions:
+  contents: write
+
+jobs:
+  strip-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: ICXCNIKAanon/metastrip@main
+        with:
+          path: '.'
+          commit: 'true'
+          webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Push changes
+        run: git push
