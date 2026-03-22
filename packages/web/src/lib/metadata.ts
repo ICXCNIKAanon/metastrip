@@ -7,6 +7,8 @@ import { isMp3 } from './strip-mp3';
 import { isWav } from './strip-wav';
 import { isFlac } from './strip-flac';
 import { isMp4 } from './strip-mp4';
+import { isHeic } from './strip-heic';
+import { isAvif } from './strip-avif';
 
 export interface MetadataEntry {
   key: string;
@@ -816,6 +818,10 @@ export async function analyzeFile(file: File): Promise<FileAnalysis> {
   if (isMp3(buffer)) return analyzeMp3Buffer(buffer, file.name);
   if (isWav(buffer)) return analyzeWavBuffer(buffer, file.name);
   if (isFlac(buffer)) return analyzeFlacBuffer(buffer, file.name);
+
+  // HEIC/HEIF and AVIF — ISOBMFF container, same analysis as MP4/MOV
+  if (isHeic(buffer)) return analyzeMp4Buffer(buffer, file.name);
+  if (isAvif(buffer)) return analyzeMp4Buffer(buffer, file.name);
 
   // Video files (MP4/MOV — ISOBMFF container)
   if (isMp4(buffer)) return analyzeMp4Buffer(buffer, file.name);

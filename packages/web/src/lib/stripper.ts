@@ -9,8 +9,10 @@ import { isMp3, stripMp3 } from './strip-mp3';
 import { isWav, stripWav } from './strip-wav';
 import { isFlac, stripFlac } from './strip-flac';
 import { isMp4, stripMp4 } from './strip-mp4';
+import { isHeic, stripHeic } from './strip-heic';
+import { isAvif, stripAvif } from './strip-avif';
 
-export type SupportedFormat = 'jpeg' | 'png' | 'webp' | 'gif' | 'svg' | 'docx' | 'xlsx' | 'pptx' | 'pdf' | 'mp3' | 'wav' | 'flac' | 'mp4' | 'mov';
+export type SupportedFormat = 'jpeg' | 'png' | 'webp' | 'gif' | 'svg' | 'docx' | 'xlsx' | 'pptx' | 'pdf' | 'mp3' | 'wav' | 'flac' | 'mp4' | 'mov' | 'heic' | 'avif';
 
 export interface StripResult {
   buffer: ArrayBuffer;
@@ -29,6 +31,9 @@ export function detectFormat(buffer: ArrayBuffer, fileName?: string): SupportedF
   if (isMp3(buffer)) return 'mp3';
   if (isWav(buffer)) return 'wav';
   if (isFlac(buffer)) return 'flac';
+  // Check HEIC/AVIF before MP4 — all use ftyp boxes, HEIC/AVIF brands must be matched first
+  if (isHeic(buffer)) return 'heic';
+  if (isAvif(buffer)) return 'avif';
   if (isMp4(buffer)) {
     // Both MP4 and MOV use the same ISOBMFF container; use filename to distinguish
     const lower = (fileName ?? '').toLowerCase();
@@ -47,7 +52,7 @@ export function detectFormat(buffer: ArrayBuffer, fileName?: string): SupportedF
 export async function stripMetadata(buffer: ArrayBuffer, fileName?: string): Promise<StripResult> {
   const format = detectFormat(buffer, fileName);
   if (!format) {
-    throw new Error('Unsupported format. Use the CLI for HEIC, TIFF, and AVIF: npm i -g @metastrip/cli');
+    throw new Error('Unsupported format. Use the CLI for TIFF and other rare formats: npm i -g @metastrip/cli');
   }
   const originalSize = buffer.byteLength;
   let stripped: ArrayBuffer;
@@ -63,6 +68,8 @@ export async function stripMetadata(buffer: ArrayBuffer, fileName?: string): Pro
     case 'flac': stripped = stripFlac(buffer); break;
     case 'mp4':
     case 'mov': stripped = stripMp4(buffer); break;
+    case 'heic': stripped = stripHeic(buffer); break;
+    case 'avif': stripped = stripAvif(buffer); break;
     case 'docx':
     case 'xlsx':
     case 'pptx':

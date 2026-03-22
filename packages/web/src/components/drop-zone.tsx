@@ -24,10 +24,15 @@ const ACCEPTED_TYPES = [
   'video/mp4',
   'video/quicktime',
   'video/x-m4v',
+  // HEIC/HEIF image formats
+  'image/heic',
+  'image/heif',
+  // AVIF image format
+  'image/avif',
 ];
 // Some browsers report Office files with application/zip or application/octet-stream,
 // and audio/video files with application/octet-stream, so we accept by extension as a fallback.
-const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf', '.mp3', '.wav', '.flac', '.mp4', '.mov', '.m4v', '.m4a'];
+const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf', '.mp3', '.wav', '.flac', '.mp4', '.mov', '.m4v', '.m4a', '.heic', '.heif', '.avif'];
 const ACCEPTED_ATTR = [...ACCEPTED_TYPES, ...ACCEPTED_EXTENSIONS].join(',');
 
 interface DropZoneProps {
@@ -52,7 +57,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
         const lower = file.name.toLowerCase();
         const hasAcceptedExt = ACCEPTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
         if (!ACCEPTED_TYPES.includes(file.type) && !hasAcceptedExt) {
-          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, or M4V files.`);
+          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, M4V, HEIC, HEIF, or AVIF files.`);
           return;
         }
         if (file.size > MAX_FILE_SIZE) {
@@ -191,7 +196,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
             </p>
             {!isDragging && !isProcessing && (
               <p className="text-sm text-text-secondary">
-                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX · MP3 · WAV · FLAC · MP4 · MOV
+                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX · MP3 · WAV · FLAC · MP4 · MOV · HEIC · AVIF
               </p>
             )}
           </div>

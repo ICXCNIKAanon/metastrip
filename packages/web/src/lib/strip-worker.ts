@@ -30,6 +30,8 @@ function injectByFormat(
     case 'flac':
     case 'mp4':
     case 'mov':
+    case 'heic':
+    case 'avif':
       // Office, PDF, audio, video, and binary formats do not support fake metadata injection — return as-is.
       return buffer;
   }
