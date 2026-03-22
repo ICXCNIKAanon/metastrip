@@ -12,6 +12,8 @@ interface ResultsPanelProps {
   analysis?: FileAnalysis;
   analyses?: FileAnalysis[];
   onStrip: () => void;
+  injectFake?: boolean;
+  onToggleInject?: (value: boolean) => void;
 }
 
 const RISK_LEVEL_LABELS: Record<FileAnalysis['riskLevel'], string> = {
@@ -55,7 +57,36 @@ function getExtension(fileName: string): string {
 /* ------------------------------------------------------------------ */
 /* Single-file detail view                                            */
 /* ------------------------------------------------------------------ */
-function SingleFileView({ analysis, onStrip }: { analysis: FileAnalysis; onStrip: () => void }) {
+function InjectToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <label className="flex items-center justify-between gap-3 bg-surface border border-border rounded-card p-4 cursor-pointer select-none">
+      <div className="min-w-0">
+        <p className="text-sm font-semibold text-text-primary">Inject decoy metadata</p>
+        <p className="text-xs text-text-tertiary mt-0.5">
+          Adds fake GPS, device, and timestamp data to confuse trackers
+        </p>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+          checked ? 'bg-primary' : 'bg-border'
+        }`}
+      >
+        <span
+          aria-hidden="true"
+          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+            checked ? 'translate-x-5' : 'translate-x-0'
+          }`}
+        />
+      </button>
+    </label>
+  );
+}
+
+function SingleFileView({ analysis, onStrip, injectFake, onToggleInject }: { analysis: FileAnalysis; onStrip: () => void; injectFake?: boolean; onToggleInject?: (v: boolean) => void }) {
   const { fileName, fileSize, riskScore, riskLevel, entries, byCategory, gps } = analysis;
 
   const categoriesWithEntries = (
@@ -101,6 +132,10 @@ function SingleFileView({ analysis, onStrip }: { analysis: FileAnalysis; onStrip
     </div>
   );
 
+  const injectToggle = onToggleInject ? (
+    <InjectToggle checked={injectFake ?? false} onChange={onToggleInject} />
+  ) : null;
+
   const ctaButton = (
     <button
       type="button"
@@ -132,6 +167,7 @@ function SingleFileView({ analysis, onStrip }: { analysis: FileAnalysis; onStrip
         </div>
         {riskPills}
         <MetadataTable entries={entries} byCategory={byCategory} />
+        {injectToggle}
         {ctaButton}
       </div>
     );
@@ -160,6 +196,7 @@ function SingleFileView({ analysis, onStrip }: { analysis: FileAnalysis; onStrip
       </div>
       {riskPills}
       <MetadataTable entries={entries} byCategory={byCategory} />
+      {injectToggle}
       {ctaButton}
     </div>
   );
@@ -168,7 +205,7 @@ function SingleFileView({ analysis, onStrip }: { analysis: FileAnalysis; onStrip
 /* ------------------------------------------------------------------ */
 /* Batch summary view                                                 */
 /* ------------------------------------------------------------------ */
-function BatchView({ analyses, onStrip }: { analyses: FileAnalysis[]; onStrip: () => void }) {
+function BatchView({ analyses, onStrip, injectFake, onToggleInject }: { analyses: FileAnalysis[]; onStrip: () => void; injectFake?: boolean; onToggleInject?: (v: boolean) => void }) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const totalEntries = analyses.reduce((sum, a) => sum + a.entries.length, 0);
@@ -244,6 +281,11 @@ function BatchView({ analyses, onStrip }: { analyses: FileAnalysis[]; onStrip: (
         })}
       </div>
 
+      {/* Inject toggle */}
+      {onToggleInject && (
+        <InjectToggle checked={injectFake ?? false} onChange={onToggleInject} />
+      )}
+
       {/* CTA */}
       <button
         type="button"
@@ -259,15 +301,15 @@ function BatchView({ analyses, onStrip }: { analyses: FileAnalysis[]; onStrip: (
 /* ------------------------------------------------------------------ */
 /* Main export — chooses single vs batch view                         */
 /* ------------------------------------------------------------------ */
-export default function ResultsPanel({ analysis, analyses, onStrip }: ResultsPanelProps) {
+export default function ResultsPanel({ analysis, analyses, onStrip, injectFake, onToggleInject }: ResultsPanelProps) {
   // Build the effective list: prefer `analyses` array, fall back to single `analysis`
   const list = analyses ?? (analysis ? [analysis] : []);
 
   if (list.length === 0) return null;
 
   if (list.length === 1) {
-    return <SingleFileView analysis={list[0]} onStrip={onStrip} />;
+    return <SingleFileView analysis={list[0]} onStrip={onStrip} injectFake={injectFake} onToggleInject={onToggleInject} />;
   }
 
-  return <BatchView analyses={list} onStrip={onStrip} />;
+  return <BatchView analyses={list} onStrip={onStrip} injectFake={injectFake} onToggleInject={onToggleInject} />;
 }

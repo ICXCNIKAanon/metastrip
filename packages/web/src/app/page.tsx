@@ -12,6 +12,7 @@ import ShipSafeBadge from '@/components/shipsafe-badge';
 import JsonLd from '@/components/json-ld';
 
 type Phase = 'idle' | 'analyzing' | 'results' | 'stripping' | 'done';
+type StrippedResult = { buffer: ArrayBuffer; size: number; fileName: string; injectedSummary?: string };
 
 const FAQ_ITEMS = [
   {
@@ -44,9 +45,10 @@ const FAQ_ITEMS = [
 export default function Home() {
   const [files, setFiles] = useState<Array<{ file: File; buffer: ArrayBuffer }>>([]);
   const [analyses, setAnalyses] = useState<FileAnalysis[]>([]);
-  const [strippedResults, setStrippedResults] = useState<Array<{ buffer: ArrayBuffer; size: number; fileName: string }>>([]);
+  const [strippedResults, setStrippedResults] = useState<StrippedResult[]>([]);
   const [processingTimeMs, setProcessingTimeMs] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
+  const [injectFake, setInjectFake] = useState(false);
 
   // Keep refs to the original buffers for the web worker
   const buffersRef = useRef<ArrayBuffer[]>([]);
@@ -81,7 +83,7 @@ export default function Home() {
     setPhase('stripping');
     const startTime = performance.now();
 
-    const results: Array<{ buffer: ArrayBuffer; size: number; fileName: string }> = [];
+    const results: StrippedResult[] = [];
     let currentIndex = 0;
 
     function processNext() {
@@ -97,13 +99,14 @@ export default function Home() {
       const fileName = files[currentIndex]?.file.name ?? `file-${currentIndex}`;
 
       const worker = new Worker(new URL('../lib/strip-worker.ts', import.meta.url));
-      worker.postMessage({ buffer: bufferCopy }, { transfer: [bufferCopy] });
+      worker.postMessage({ buffer: bufferCopy, inject: injectFake }, { transfer: [bufferCopy] });
       worker.onmessage = (e) => {
         if (e.data.success) {
           results.push({
             buffer: e.data.buffer,
             size: e.data.strippedSize,
             fileName,
+            injectedSummary: e.data.injectedSummary,
           });
           currentIndex++;
           processNext();
@@ -121,7 +124,7 @@ export default function Home() {
     }
 
     processNext();
-  }, [files]);
+  }, [files, injectFake]);
 
   const handleReset = useCallback(() => {
     setFiles([]);
@@ -138,6 +141,7 @@ export default function Home() {
     strippedBuffer: sr.buffer,
     strippedSize: sr.size,
     fileName: sr.fileName,
+    injectedSummary: sr.injectedSummary,
   }));
 
   return (
@@ -166,7 +170,12 @@ export default function Home() {
         )}
 
         {phase === 'results' && analyses.length > 0 && (
-          <ResultsPanel analyses={analyses} onStrip={handleStrip} />
+          <ResultsPanel
+            analyses={analyses}
+            onStrip={handleStrip}
+            injectFake={injectFake}
+            onToggleInject={setInjectFake}
+          />
         )}
 
         {phase === 'stripping' && (

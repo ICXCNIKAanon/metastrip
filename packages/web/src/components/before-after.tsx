@@ -14,6 +14,7 @@ interface BatchResult {
   strippedBuffer: ArrayBuffer;
   strippedSize: number;
   fileName: string;
+  injectedSummary?: string;
 }
 
 interface BeforeAfterProps {
@@ -104,6 +105,7 @@ function SingleView({
   processingTimeMs,
   fileName,
   onReset,
+  injectedSummary,
 }: {
   analysis: FileAnalysis;
   strippedSize: number;
@@ -111,6 +113,7 @@ function SingleView({
   processingTimeMs: number;
   fileName: string;
   onReset: () => void;
+  injectedSummary?: string;
 }) {
   const { fileSize, riskScore, riskLevel, byCategory } = analysis;
 
@@ -203,6 +206,17 @@ function SingleView({
           </ul>
         </div>
       </div>
+
+      {/* Injected decoy metadata summary */}
+      {injectedSummary && (
+        <div className="bg-accent/5 border border-accent/20 rounded-card p-4 flex items-start gap-3">
+          <span className="text-lg leading-none flex-shrink-0" aria-hidden="true">🎭</span>
+          <div>
+            <p className="text-sm font-semibold text-text-primary">Decoy metadata injected</p>
+            <p className="text-xs text-text-secondary mt-0.5">{injectedSummary}</p>
+          </div>
+        </div>
+      )}
 
       {/* Size comparison bar */}
       <div className="bg-surface border border-border rounded-card p-4 flex flex-col gap-3">
@@ -324,6 +338,19 @@ function BatchView({
         </p>
       </div>
 
+      {/* Injected decoy banner (shows once if any file has injection) */}
+      {results.some((r) => r.injectedSummary) && (
+        <div className="bg-accent/5 border border-accent/20 rounded-card p-4 flex items-start gap-3">
+          <span className="text-lg leading-none flex-shrink-0" aria-hidden="true">🎭</span>
+          <div>
+            <p className="text-sm font-semibold text-text-primary">Decoy metadata injected</p>
+            <p className="text-xs text-text-secondary mt-0.5">
+              Each file received unique fake GPS, device, and timestamp data
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Per-file rows with download buttons */}
       <div className="flex flex-col gap-2">
         {results.map((r, i) => {
@@ -338,6 +365,7 @@ function BatchView({
                 <p className="font-semibold text-text-primary truncate text-sm">{r.fileName}</p>
                 <p className="text-xs text-text-tertiary mt-0.5">
                   {r.analysis.entries.length} entries stripped · {savedKB} KB saved
+                  {r.injectedSummary && ` · Injected: ${r.injectedSummary}`}
                 </p>
               </div>
               <button
@@ -427,6 +455,7 @@ export default function BeforeAfter({
         processingTimeMs={processingTimeMs ?? 0}
         fileName={r.fileName}
         onReset={onReset}
+        injectedSummary={r.injectedSummary}
       />
     );
   }
