@@ -147,6 +147,149 @@ async function analyzeOfficeFile(buffer: ArrayBuffer, fileName: string): Promise
   const zip = await JSZip.loadAsync(buffer);
   const entries: MetadataEntry[] = [];
 
+  // Check for comments (DOCX)
+  const docxCommentFiles = ['word/comments.xml', 'word/commentsExtended.xml', 'word/commentsIds.xml'];
+  for (const commentFile of docxCommentFiles) {
+    if (zip.file(commentFile)) {
+      const xml = await zip.file(commentFile)!.async('string');
+      // Count comment elements
+      const commentMatches = xml.match(/<w:comment\b/g);
+      const count = commentMatches ? commentMatches.length : 1;
+      entries.push({
+        key: 'DocxComments',
+        label: 'Comments',
+        value: `${count} comment(s) found in ${commentFile}`,
+        category: 'author',
+        risk: RISK_LEVELS['author'],
+      });
+      break; // only report once for the first found file
+    }
+  }
+
+  // Check for comments (XLSX)
+  let xlsxCommentFound = false;
+  zip.forEach((relativePath, _file) => {
+    if (!xlsxCommentFound && /^xl\/comments\d*\.xml$/.test(relativePath)) {
+      xlsxCommentFound = true;
+      entries.push({
+        key: 'XlsxComments',
+        label: 'Spreadsheet Comments',
+        value: `Comments found in ${relativePath}`,
+        category: 'author',
+        risk: RISK_LEVELS['author'],
+      });
+    }
+  });
+
+  // Check for threaded comments (XLSX)
+  let threadedCommentFound = false;
+  zip.forEach((relativePath, _file) => {
+    if (!threadedCommentFound && relativePath.startsWith('xl/threadedComments/')) {
+      threadedCommentFound = true;
+      entries.push({
+        key: 'XlsxThreadedComments',
+        label: 'Threaded Comments',
+        value: `Threaded comments found (${relativePath})`,
+        category: 'author',
+        risk: RISK_LEVELS['author'],
+      });
+    }
+  });
+
+  // Check for comments (PPTX)
+  let pptxCommentFound = false;
+  zip.forEach((relativePath, _file) => {
+    if (!pptxCommentFound && relativePath.startsWith('ppt/comments/')) {
+      pptxCommentFound = true;
+      entries.push({
+        key: 'PptxComments',
+        label: 'Slide Comments',
+        value: `Comments found in ${relativePath}`,
+        category: 'author',
+        risk: RISK_LEVELS['author'],
+      });
+    }
+  });
+
+  // Check for comment authors (PPTX)
+  if (zip.file('ppt/commentAuthors.xml')) {
+    const xml = await zip.file('ppt/commentAuthors.xml')!.async('string');
+    const authorMatches = xml.match(/<p:cmAuthor\b/g);
+    const count = authorMatches ? authorMatches.length : 1;
+    entries.push({
+      key: 'PptxCommentAuthors',
+      label: 'Comment Authors',
+      value: `${count} comment author(s) in ppt/commentAuthors.xml`,
+      category: 'author',
+      risk: RISK_LEVELS['author'],
+    });
+  }
+
+  // Check for people/contributors (DOCX)
+  if (zip.file('word/people.xml')) {
+    const xml = await zip.file('word/people.xml')!.async('string');
+    const personMatches = xml.match(/<w:person\b/g);
+    const count = personMatches ? personMatches.length : 1;
+    entries.push({
+      key: 'DocxPeople',
+      label: 'Contributors',
+      value: `${count} contributor(s) found in word/people.xml`,
+      category: 'author',
+      risk: RISK_LEVELS['author'],
+    });
+  }
+
+  // Check for people/contributors (XLSX)
+  if (zip.file('xl/persons.xml')) {
+    const xml = await zip.file('xl/persons.xml')!.async('string');
+    const personMatches = xml.match(/<x:person\b|<person\b/g);
+    const count = personMatches ? personMatches.length : 1;
+    entries.push({
+      key: 'XlsxPersons',
+      label: 'Contributors',
+      value: `${count} contributor(s) found in xl/persons.xml`,
+      category: 'author',
+      risk: RISK_LEVELS['author'],
+    });
+  }
+
+  // Check for tracked changes in word/document.xml
+  if (zip.file('word/document.xml')) {
+    const xml = await zip.file('word/document.xml')!.async('string');
+    const hasTrackedChanges =
+      /<w:ins\b/.test(xml) ||
+      /<w:del\b/.test(xml) ||
+      /<w:rPrChange\b/.test(xml) ||
+      /<w:pPrChange\b/.test(xml) ||
+      /<w:sectPrChange\b/.test(xml);
+    if (hasTrackedChanges) {
+      const insCount = (xml.match(/<w:ins\b/g) ?? []).length;
+      const delCount = (xml.match(/<w:del\b/g) ?? []).length;
+      entries.push({
+        key: 'TrackedChanges',
+        label: 'Tracked Changes',
+        value: `Yes — ${insCount} insertion(s), ${delCount} deletion(s)`,
+        category: 'author',
+        risk: RISK_LEVELS['author'],
+      });
+    }
+  }
+
+  // Check for customXml directory
+  let customXmlFound = false;
+  zip.forEach((relativePath, _file) => {
+    if (!customXmlFound && relativePath.startsWith('customXml/') && !_file.dir) {
+      customXmlFound = true;
+      entries.push({
+        key: 'CustomXml',
+        label: 'Custom XML Data',
+        value: 'Custom XML directory present (may contain arbitrary data)',
+        category: 'other',
+        risk: RISK_LEVELS['other'],
+      });
+    }
+  });
+
   // Parse docProps/core.xml — Dublin Core metadata
   const coreFile = zip.file('docProps/core.xml');
   if (coreFile) {
