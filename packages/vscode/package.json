@@ -1,0 +1,59 @@
+{
+  "name": "metastrip",
+  "displayName": "MetaStrip — Image Metadata Remover",
+  "description": "Right-click any image to strip GPS, device info, and hidden metadata. Zero quality loss.",
+  "version": "0.1.0",
+  "publisher": "ICXCNIKAanon",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ICXCNIKAanon/metastrip",
+    "directory": "packages/vscode"
+  },
+  "icon": "icon.png",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "keywords": ["metadata", "exif", "privacy", "strip", "image", "gps"],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "metastrip.stripFile",
+        "title": "MetaStrip: Strip Metadata"
+      },
+      {
+        "command": "metastrip.stripFolder",
+        "title": "MetaStrip: Strip All Images in Folder"
+      }
+    ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "metastrip.stripFile",
+          "when": "resourceExtname =~ /\\.(jpg|jpeg|png|webp)$/i",
+          "group": "metastrip"
+        },
+        {
+          "command": "metastrip.stripFolder",
+          "when": "explorerResourceIsFolder",
+          "group": "metastrip"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "package": "npx @vscode/vsce package --no-dependencies"
+  },
+  "dependencies": {
+    "@metastrip/hooks": "^0.1.0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}
