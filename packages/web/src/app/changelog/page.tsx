@@ -3,6 +3,8 @@ import Link from 'next/link';
 import FeatureRequest from '@/components/feature-request';
 import JsonLd from '@/components/json-ld';
 
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: 'Changelog',
   description:
