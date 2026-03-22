@@ -6,6 +6,7 @@ import { isPdf } from './strip-pdf';
 import { isMp3 } from './strip-mp3';
 import { isWav } from './strip-wav';
 import { isFlac } from './strip-flac';
+import { isMp4 } from './strip-mp4';
 
 export interface MetadataEntry {
   key: string;
@@ -553,6 +554,256 @@ function analyzeFlacBuffer(buffer: ArrayBuffer, fileName: string): FileAnalysis 
   return buildAudioAnalysis(fileName, buffer.byteLength, entries);
 }
 
+// ---------------------------------------------------------------------------
+// MP4/MOV file analysis helpers (ISOBMFF container)
+// ---------------------------------------------------------------------------
+
+/** iTunes metadata atom keys found in moov/udta/meta/ilst */
+const ILST_ATOM_MAP: Record<string, [string, MetadataCategory]> = {
+  '\xA9nam': ['Title', 'other'],
+  '\xA9ART': ['Artist', 'author'],
+  '\xA9alb': ['Album', 'other'],
+  '\xA9day': ['Year', 'timestamps'],
+  '\xA9too': ['Encoding Tool', 'software'],
+  '\xA9cmt': ['Comment', 'other'],
+  '\xA9aut': ['Author', 'author'],
+  '\xA9wrt': ['Composer', 'author'],
+  '\xA9enc': ['Encoded By', 'author'],
+  '\xA9gen': ['Genre', 'other'],
+  'covr': ['Cover Art', 'thumbnail'],
+  'aART': ['Album Artist', 'author'],
+  'cprt': ['Copyright', 'author'],
+  'desc': ['Description', 'other'],
+  'ldes': ['Long Description', 'other'],
+  'tvnn': ['TV Network Name', 'other'],
+  'tvsh': ['TV Show Name', 'other'],
+  'tvsn': ['TV Season', 'other'],
+  'tven': ['TV Episode', 'other'],
+  'tves': ['TV Episode Number', 'other'],
+  'keyw': ['Keywords', 'other'],
+  'catg': ['Category', 'other'],
+  'hdvd': ['HD Video', 'other'],
+  'pgap': ['Gapless Playback', 'other'],
+  'stik': ['Media Type', 'other'],
+  'rtng': ['Content Rating', 'other'],
+  'pcst': ['Podcast', 'other'],
+  'purl': ['Podcast URL', 'other'],
+  'egid': ['Episode Global Unique ID', 'other'],
+  'sosn': ['Sort Show', 'other'],
+  'soar': ['Sort Artist', 'author'],
+  'soal': ['Sort Album', 'other'],
+  'sonm': ['Sort Name', 'other'],
+  'soco': ['Sort Composer', 'author'],
+  'soaa': ['Sort Album Artist', 'author'],
+};
+
+/**
+ * Reads a 4-byte big-endian uint32 from bytes at the given offset.
+ * Returns 0 if out of range.
+ */
+function readBE32(bytes: Uint8Array, offset: number): number {
+  if (offset + 4 > bytes.length) return 0;
+  return (
+    ((bytes[offset]! << 24) |
+      (bytes[offset + 1]! << 16) |
+      (bytes[offset + 2]! << 8) |
+      bytes[offset + 3]!) >>> 0
+  );
+}
+
+/** Reads a 4-char FourCC string from bytes at the given offset. */
+function readFourCC(bytes: Uint8Array, offset: number): string {
+  if (offset + 8 > bytes.length) return '';
+  return String.fromCharCode(bytes[offset + 4]!, bytes[offset + 5]!, bytes[offset + 6]!, bytes[offset + 7]!);
+}
+
+/**
+ * Walks ISOBMFF boxes at [start, end) and calls the visitor for each box.
+ * The visitor receives (type, dataStart, dataEnd) — the data region excluding the 8-byte header.
+ */
+function walkBoxes(
+  bytes: Uint8Array,
+  start: number,
+  end: number,
+  visitor: (type: string, dataStart: number, dataEnd: number) => void,
+): void {
+  let offset = start;
+  while (offset + 8 <= end) {
+    let size = readBE32(bytes, offset);
+    const type = String.fromCharCode(bytes[offset + 4]!, bytes[offset + 5]!, bytes[offset + 6]!, bytes[offset + 7]!);
+    let headerSize = 8;
+
+    if (size === 1 && offset + 16 <= end) {
+      // Extended 64-bit size
+      const hi = readBE32(bytes, offset + 8);
+      const lo = readBE32(bytes, offset + 12);
+      size = hi * 0x100000000 + lo;
+      headerSize = 16;
+    } else if (size === 0) {
+      size = end - offset;
+    }
+
+    if (size < headerSize || offset + size > end) break;
+    visitor(type, offset + headerSize, offset + size);
+    offset += size;
+  }
+}
+
+/** Decodes a UTF-8 string from bytes[start..end], trimming null bytes. */
+function decodeUtf8(bytes: Uint8Array, start: number, end: number): string {
+  try {
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes.slice(start, end)).replace(/\0/g, '').trim();
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Parses the moov/udta box to extract metadata entries.
+ * Handles iTunes-style ilst atoms and GPS ©xyz atom.
+ */
+function parseMoovUdta(bytes: Uint8Array, udtaStart: number, udtaEnd: number): MetadataEntry[] {
+  const entries: MetadataEntry[] = [];
+
+  walkBoxes(bytes, udtaStart, udtaEnd, (type, dataStart, dataEnd) => {
+    // GPS location: ©xyz
+    if (type === '\xA9xyz') {
+      const val = decodeUtf8(bytes, dataStart, dataEnd);
+      if (val) {
+        entries.push({
+          key: 'GPSCoordinates',
+          label: 'GPS Coordinates',
+          value: val,
+          category: 'gps',
+          risk: RISK_LEVELS['gps'],
+        });
+      }
+      return;
+    }
+
+    // meta box contains ilst
+    if (type === 'meta') {
+      // meta has a 4-byte version/flags before its children
+      const metaChildStart = dataStart + 4;
+      walkBoxes(bytes, metaChildStart, dataEnd, (metaChildType, metaDataStart, metaDataEnd) => {
+        if (metaChildType === 'ilst') {
+          parseMp4Ilst(bytes, metaDataStart, metaDataEnd, entries);
+        }
+      });
+      return;
+    }
+
+    // Direct ilst (some encoders put it directly in udta)
+    if (type === 'ilst') {
+      parseMp4Ilst(bytes, dataStart, dataEnd, entries);
+    }
+  });
+
+  return entries;
+}
+
+/**
+ * Parses an ilst box and pushes MetadataEntry items into the entries array.
+ * Each child of ilst is a metadata atom (e.g. ©nam, ©ART) containing a 'data' sub-atom.
+ */
+function parseMp4Ilst(bytes: Uint8Array, start: number, end: number, entries: MetadataEntry[]): void {
+  walkBoxes(bytes, start, end, (type, dataStart, dataEnd) => {
+    const known = ILST_ATOM_MAP[type];
+    const label = known ? known[0] : type;
+    const category: MetadataCategory = known ? known[1] : 'other';
+
+    // Each ilst item contains a 'data' atom: [version 1B][flags 3B][locale 4B][value...]
+    walkBoxes(bytes, dataStart, dataEnd, (subType, subDataStart, subDataEnd) => {
+      if (subType !== 'data') return;
+      // data atom: 1 byte version + 3 bytes flags + 4 bytes locale = 8 bytes prefix before value
+      const valueStart = subDataStart + 8;
+      if (valueStart >= subDataEnd) return;
+
+      // flags byte 3 encodes type: 1 = UTF-8, 13 = JPEG/PNG (cover art), 21 = integer
+      const flags = bytes[subDataStart + 3]!;
+
+      let value: string;
+      if (flags === 13 || flags === 14) {
+        value = `${subDataEnd - valueStart} bytes (cover art image)`;
+      } else if (flags === 1 || flags === 0) {
+        value = decodeUtf8(bytes, valueStart, subDataEnd);
+      } else {
+        // Integer or other — just report the byte count
+        value = `${subDataEnd - valueStart} bytes`;
+      }
+
+      if (value) {
+        entries.push({
+          key: type.replace(/[^\x20-\x7E]/g, '_'),
+          label,
+          value,
+          category,
+          risk: RISK_LEVELS[category],
+        });
+      }
+    });
+  });
+}
+
+function analyzeMp4Buffer(buffer: ArrayBuffer, fileName: string): FileAnalysis {
+  const bytes = new Uint8Array(buffer);
+  const entries: MetadataEntry[] = [];
+
+  // Walk top-level boxes looking for moov
+  walkBoxes(bytes, 0, bytes.length, (type, dataStart, dataEnd) => {
+    if (type !== 'moov') return;
+
+    // Inside moov, look for udta and meta
+    walkBoxes(bytes, dataStart, dataEnd, (moovChild, childDataStart, childDataEnd) => {
+      if (moovChild === 'udta') {
+        const udtaEntries = parseMoovUdta(bytes, childDataStart, childDataEnd);
+        entries.push(...udtaEntries);
+      } else if (moovChild === 'meta') {
+        // Some encoders put meta directly inside moov (not inside udta)
+        // meta has 4 bytes version/flags before children
+        const metaChildStart = childDataStart + 4;
+        walkBoxes(bytes, metaChildStart, childDataEnd, (metaChild, metaDataStart, metaDataEnd) => {
+          if (metaChild === 'ilst') {
+            parseMp4Ilst(bytes, metaDataStart, metaDataEnd, entries);
+          }
+        });
+      }
+    });
+  });
+
+  // Build GPS from coordinates entry if present
+  let gps: GPSData | null = null;
+  const gpsEntry = entries.find((e) => e.key === 'GPSCoordinates');
+  if (gpsEntry) {
+    // Format: "+lat+lon/" or "+lat-lon/" (ISO 6709)
+    const match = gpsEntry.value.match(/([+-][\d.]+)([+-][\d.]+)/);
+    if (match) {
+      const lat = parseFloat(match[1]!);
+      const lon = parseFloat(match[2]!);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        gps = { lat, lon };
+      }
+    }
+  }
+
+  const riskScore = computeRiskScore(entries);
+  const riskLevel = scoreToLevel(riskScore);
+  const byCategory: Record<MetadataCategory, MetadataEntry[]> = {} as Record<MetadataCategory, MetadataEntry[]>;
+  for (const cat of ALL_CATEGORIES) byCategory[cat] = [];
+  for (const entry of entries) byCategory[entry.category].push(entry);
+
+  return {
+    fileName,
+    fileSize: buffer.byteLength,
+    entries,
+    gps,
+    riskScore,
+    riskLevel,
+    isAI: false,
+    byCategory,
+  };
+}
+
 export async function analyzeFile(file: File): Promise<FileAnalysis> {
   const buffer = await file.arrayBuffer();
 
@@ -565,6 +816,9 @@ export async function analyzeFile(file: File): Promise<FileAnalysis> {
   if (isMp3(buffer)) return analyzeMp3Buffer(buffer, file.name);
   if (isWav(buffer)) return analyzeWavBuffer(buffer, file.name);
   if (isFlac(buffer)) return analyzeFlacBuffer(buffer, file.name);
+
+  // Video files (MP4/MOV — ISOBMFF container)
+  if (isMp4(buffer)) return analyzeMp4Buffer(buffer, file.name);
 
   // Office documents (DOCX, XLSX, PPTX) are ZIP archives
   const lower = file.name.toLowerCase();

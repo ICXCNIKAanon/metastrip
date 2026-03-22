@@ -8,8 +8,9 @@ import { isPdf, stripPdf } from './strip-pdf';
 import { isMp3, stripMp3 } from './strip-mp3';
 import { isWav, stripWav } from './strip-wav';
 import { isFlac, stripFlac } from './strip-flac';
+import { isMp4, stripMp4 } from './strip-mp4';
 
-export type SupportedFormat = 'jpeg' | 'png' | 'webp' | 'gif' | 'svg' | 'docx' | 'xlsx' | 'pptx' | 'pdf' | 'mp3' | 'wav' | 'flac';
+export type SupportedFormat = 'jpeg' | 'png' | 'webp' | 'gif' | 'svg' | 'docx' | 'xlsx' | 'pptx' | 'pdf' | 'mp3' | 'wav' | 'flac' | 'mp4' | 'mov';
 
 export interface StripResult {
   buffer: ArrayBuffer;
@@ -28,6 +29,12 @@ export function detectFormat(buffer: ArrayBuffer, fileName?: string): SupportedF
   if (isMp3(buffer)) return 'mp3';
   if (isWav(buffer)) return 'wav';
   if (isFlac(buffer)) return 'flac';
+  if (isMp4(buffer)) {
+    // Both MP4 and MOV use the same ISOBMFF container; use filename to distinguish
+    const lower = (fileName ?? '').toLowerCase();
+    if (lower.endsWith('.mov')) return 'mov';
+    return 'mp4';
+  }
   if (isZip(buffer) && fileName) {
     const lower = fileName.toLowerCase();
     if (lower.endsWith('.docx')) return 'docx';
@@ -54,6 +61,8 @@ export async function stripMetadata(buffer: ArrayBuffer, fileName?: string): Pro
     case 'mp3': stripped = stripMp3(buffer); break;
     case 'wav': stripped = stripWav(buffer); break;
     case 'flac': stripped = stripFlac(buffer); break;
+    case 'mp4':
+    case 'mov': stripped = stripMp4(buffer); break;
     case 'docx':
     case 'xlsx':
     case 'pptx':

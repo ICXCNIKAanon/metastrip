@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 
-const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
+const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB (videos can be large)
 const ACCEPTED_TYPES = [
   'image/jpeg',
   'image/png',
@@ -20,10 +20,14 @@ const ACCEPTED_TYPES = [
   'audio/x-wav',
   'audio/flac',
   'audio/x-flac',
+  // Video formats
+  'video/mp4',
+  'video/quicktime',
+  'video/x-m4v',
 ];
 // Some browsers report Office files with application/zip or application/octet-stream,
-// and audio files with application/octet-stream, so we accept by extension as a fallback.
-const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf', '.mp3', '.wav', '.flac'];
+// and audio/video files with application/octet-stream, so we accept by extension as a fallback.
+const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf', '.mp3', '.wav', '.flac', '.mp4', '.mov', '.m4v', '.m4a'];
 const ACCEPTED_ATTR = [...ACCEPTED_TYPES, ...ACCEPTED_EXTENSIONS].join(',');
 
 interface DropZoneProps {
@@ -48,11 +52,11 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
         const lower = file.name.toLowerCase();
         const hasAcceptedExt = ACCEPTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
         if (!ACCEPTED_TYPES.includes(file.type) && !hasAcceptedExt) {
-          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, or FLAC files.`);
+          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, or M4V files.`);
           return;
         }
         if (file.size > MAX_FILE_SIZE) {
-          setError(`"${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 100 MB per file.`);
+          setError(`"${file.name}" is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 500 MB per file.`);
           return;
         }
       }
@@ -187,7 +191,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
             </p>
             {!isDragging && !isProcessing && (
               <p className="text-sm text-text-secondary">
-                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX · MP3 · WAV · FLAC
+                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX · MP3 · WAV · FLAC · MP4 · MOV
               </p>
             )}
           </div>
