@@ -22,11 +22,6 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
               className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors py-1"
             >
               {link.label}
-              {link.comingSoon && (
-                <span className="text-[10px] font-semibold uppercase tracking-wide bg-primary/10 text-primary px-1.5 py-0.5 rounded">
-                  Soon
-                </span>
-              )}
             </a>
           ))}
         </nav>
