@@ -46,6 +46,14 @@ export default function Footer() {
                   </span>
                 </span>
               </li>
+              <li>
+                <Link
+                  href="/changelog"
+                  className="text-text-secondary hover:text-text-primary text-sm transition-colors duration-150"
+                >
+                  Changelog
+                </Link>
+              </li>
             </ul>
           </div>
 

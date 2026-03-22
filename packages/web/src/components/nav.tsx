@@ -50,6 +50,12 @@ export default function Nav() {
             >
               Blog
             </Link>
+            <Link
+              href="/changelog"
+              className="text-text-secondary hover:text-text-primary text-sm font-medium transition-colors duration-150"
+            >
+              Changelog
+            </Link>
             <a
               href="https://github.com/ICXCNIKAanon/metastrip"
               target="_blank"
@@ -141,6 +147,13 @@ export default function Nav() {
               className="text-text-secondary hover:text-text-primary text-sm font-medium py-2.5 px-3 rounded-md hover:bg-surface transition-all duration-150"
             >
               Blog
+            </Link>
+            <Link
+              href="/changelog"
+              onClick={() => setMobileOpen(false)}
+              className="text-text-secondary hover:text-text-primary text-sm font-medium py-2.5 px-3 rounded-md hover:bg-surface transition-all duration-150"
+            >
+              Changelog
             </Link>
             <a
               href="https://github.com/ICXCNIKAanon/metastrip"

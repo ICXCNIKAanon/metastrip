@@ -10,6 +10,7 @@ import { analyzeFile } from '@/lib/metadata';
 import type { FileAnalysis } from '@/lib/metadata';
 import ShipSafeBadge from '@/components/shipsafe-badge';
 import JsonLd from '@/components/json-ld';
+import FeatureRequest from '@/components/feature-request';
 
 type Phase = 'idle' | 'analyzing' | 'results' | 'stripping' | 'done';
 type StrippedResult = { buffer: ArrayBuffer; size: number; fileName: string; injectedSummary?: string };
@@ -349,6 +350,9 @@ const report = await ms.inspect('photo.jpg');`}
         </h2>
         <FaqAccordion items={FAQ_ITEMS} />
       </section>
+
+      {/* ========== FEATURE REQUEST ========== */}
+      <FeatureRequest />
 
       {/* ========== STRUCTURED DATA ========== */}
       <JsonLd
