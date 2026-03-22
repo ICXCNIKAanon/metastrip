@@ -487,5 +487,50 @@
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Inject network interceptor into the main page world
+  // ---------------------------------------------------------------------------
+
+  function injectMainWorldScript() {
+    try {
+      var script = document.createElement('script');
+      script.src = chrome.runtime.getURL('intercept.js');
+      script.onload = function() { script.remove(); };
+      (document.head || document.documentElement).appendChild(script);
+    } catch(e) {
+      console.warn('MetaStrip: Could not inject main world script', e);
+    }
+  }
+
+  // Inject as early as possible
+  if (document.head || document.documentElement) {
+    injectMainWorldScript();
+  } else {
+    document.addEventListener('DOMContentLoaded', injectMainWorldScript);
+  }
+
+  // Forward enabled/disabled state to the main world script
+  function syncEnabledState() {
+    try {
+      window.dispatchEvent(new CustomEvent('metastrip-toggle', { detail: { enabled: enabled } }));
+    } catch(e) {}
+  }
+
+  // Listen for strip notifications from the main world interceptor
+  window.addEventListener('metastrip-stripped', function(e) {
+    if (e.detail && e.detail.name) {
+      showNotification(e.detail.name);
+    }
+  });
+
+  // Sync state when it changes
+  if (typeof chrome !== 'undefined' && chrome.storage) {
+    chrome.storage.onChanged.addListener(function(changes) {
+      if (changes.enabled) {
+        syncEnabledState();
+      }
+    });
+  }
+
   console.log('MetaStrip: Extension active');
 })();
