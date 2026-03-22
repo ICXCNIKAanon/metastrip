@@ -5,6 +5,11 @@ import { stripJpeg } from './strip-jpeg';
 import { stripPng } from './strip-png';
 import { stripWebp } from './strip-webp';
 import { restageFile } from './git';
+
+export { detectFormat } from './detect';
+export { stripJpeg } from './strip-jpeg';
+export { stripPng } from './strip-png';
+export { stripWebp } from './strip-webp';
 import * as path from 'path';
 
 const SUPPORTED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);

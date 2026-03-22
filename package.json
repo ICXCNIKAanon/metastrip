@@ -10,7 +10,8 @@
     "packages/cli",
     "packages/mcp-server",
     "packages/web",
-    "packages/hooks"
+    "packages/hooks",
+    "packages/api"
   ],
   "scripts": {
     "build": "npm run build --workspaces",

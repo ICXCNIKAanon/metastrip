@@ -1,0 +1,24 @@
+{
+  "name": "@metastrip/api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MetaStrip REST API — strip and inspect image metadata",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "hono": "^4.0.0",
+    "@hono/node-server": "^1.8.0",
+    "@metastrip/hooks": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.0",
+    "tsx": "^4.7.0"
+  },
+  "license": "MIT"
+}
