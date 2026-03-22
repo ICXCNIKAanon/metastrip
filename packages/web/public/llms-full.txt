@@ -467,6 +467,28 @@ npx metastrip-hooks uninstall
 
 ---
 
+## Browser Extension
+
+The MetaStrip Chrome extension provides two capabilities:
+
+1. **Auto-strip on standard file uploads** — When you use a file picker (`<input type="file">`) on forms, job applications, and most websites, the extension intercepts the selected file and strips metadata before it is submitted. A notification confirms the file was cleaned.
+
+2. **Inspect any image on the web** — Right-click any image to view its GPS coordinates, device info, timestamps, and full metadata. Use "Scan All Images on Page" to audit an entire page at once.
+
+### Limitations
+
+The extension intercepts file uploads that go through the browser's standard `FormData` API or `<input type="file">` elements. It **cannot** reliably intercept uploads in apps that use proprietary upload protocols:
+
+- **Gmail** — Uses a custom XMLHttpRequest-based upload protocol that reads the file directly without going through a standard `<input type="file">` change event. By the time the extension's async stripping completes, Gmail has already read the original file.
+- **Slack** — Uses a proprietary chunked upload API. File data is read before standard interception points.
+- **Discord** — Similar to Slack; uses its own upload pipeline that bypasses standard FormData.
+
+**For Gmail, Slack, and Discord:** Strip your files first using the web tool at https://metastrip.ai or the CLI (`metastrip clean photo.jpg`) before uploading. This guarantees the uploaded file contains no metadata.
+
+Drag-and-drop and paste uploads cannot be auto-stripped in any app (browser security restrictions prevent modifying clipboard or DataTransfer data). The extension shows a warning notification when it detects metadata in a dragged or pasted image.
+
+---
+
 ## What Metadata Gets Removed
 
 MetaStrip removes all metadata that could identify, locate, or track a person. Here is the complete list by category.

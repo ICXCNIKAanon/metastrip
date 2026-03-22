@@ -376,12 +376,19 @@ export default function DocsPage() {
 
         <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Features</h3>
         <ul className="text-text-secondary space-y-2 mb-6 list-disc list-inside">
-          <li><strong className="text-text-primary">Auto-strip on upload</strong> — metadata is removed from images before they reach any website</li>
+          <li><strong className="text-text-primary">Auto-strip on standard file uploads</strong> — strips metadata when you use a file picker on forms, job applications, and most websites</li>
           <li><strong className="text-text-primary">Right-click → Inspect Metadata</strong> — view GPS, device info, and timestamps on any image</li>
           <li><strong className="text-text-primary">Scan All Images on Page</strong> — right-click the page to scan every image for metadata</li>
           <li><strong className="text-text-primary">Drag &amp; paste alerts</strong> — warns when dragged or pasted images contain metadata</li>
           <li><strong className="text-text-primary">Toggle on/off</strong> — click the extension icon to pause protection</li>
         </ul>
+        <div className="bg-surface border border-border rounded-card px-4 py-3 mb-6">
+          <p className="text-sm text-text-secondary">
+            <strong className="text-text-primary">Note:</strong> Gmail, Slack, and Discord use custom upload handlers that bypass standard file inputs. For these apps, strip your files first using the{' '}
+            <a href="/" className="text-primary hover:underline">web tool</a>
+            {' '}or CLI.
+          </p>
+        </div>
       </section>
 
       {/* VS Code Extension */}

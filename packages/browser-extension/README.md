@@ -33,6 +33,26 @@ A small toast notification confirms: "MetaStrip: Stripped metadata from photo.jp
 | `strip-webp.js` | WebP metadata stripper (standalone) |
 | `popup.html/js/css` | Extension popup UI with toggle |
 
+## Limitations
+
+The extension works reliably when a website uses a standard `<input type="file">` element or submits image files via the `FormData` API. It **cannot** guarantee metadata is stripped in the following cases:
+
+| App / Scenario | Why it fails |
+|----------------|-------------|
+| **Gmail** | Uses a proprietary XHR upload protocol. The file is read before our async stripping completes. |
+| **Slack** | Uses a chunked upload API that bypasses standard file inputs. |
+| **Discord** | Same as Slack — proprietary upload pipeline. |
+| **Drag-and-drop** | `DataTransfer.files` is read-only; the extension cannot replace dragged files. It shows a warning instead. |
+| **Paste** | Clipboard data is read-only. The extension shows a warning for pasted images that contain metadata. |
+
+**Recommended workflow for Gmail, Slack, and Discord:** Strip your files first using the [web tool](https://metastrip.ai) or CLI before uploading:
+
+```bash
+metastrip clean photo.jpg
+```
+
+Notifications in the extension say "Cleaned [file] (standard uploads)" rather than "Stripped metadata from [file]" to reflect this uncertainty — they confirm the file object was replaced in the browser, not that the stripped version is what the server received.
+
 ## Architecture
 
 All strippers are plain JavaScript (no modules, no imports) that attach to `window.__metastrip`. The content script listens for `change` events on `input[type=file]` elements, processes each selected file through the appropriate stripper, and replaces the input's `files` with stripped versions via `DataTransfer`.

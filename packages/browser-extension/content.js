@@ -76,9 +76,6 @@
         if (same) return file; // Already clean
       }
 
-      // Show notification
-      showNotification(file.name);
-
       // Create new File with stripped data
       return new File([stripped], file.name, {
         type: file.type,
@@ -94,9 +91,9 @@
   // Toast notification
   // ---------------------------------------------------------------------------
 
-  function showNotification(fileName) {
+  function showNotification(message) {
     var div = document.createElement('div');
-    div.textContent = 'MetaStrip: Stripped metadata from ' + fileName;
+    div.textContent = 'MetaStrip: ' + message;
     div.style.cssText = [
       'position:fixed',
       'bottom:20px',
@@ -152,6 +149,12 @@
           dt.items.add(processed[i]);
         }
         input.files = dt.files;
+        // Show cautious notification — we replaced the file object in the input,
+        // but cannot guarantee the site hadn't already read the original file
+        // synchronously before our async stripping completed.
+        var names = files.filter(function(f, idx) { return processed[idx] !== f; })
+                         .map(function(f) { return f.name; }).join(', ');
+        if (names) showNotification('Cleaned ' + names + ' (standard uploads)');
       }
     }).catch(function(err) {
       console.warn('MetaStrip: Error processing files', err);
@@ -204,7 +207,13 @@
         if (anyStripped) {
           var dt = new DataTransfer();
           for (var i = 0; i < processed.length; i++) { dt.items.add(processed[i]); }
-          try { input.files = dt.files; } catch(e) { /* some inputs are read-only */ }
+          try {
+            input.files = dt.files;
+            // Show cautious notification — same caveat as the main change handler
+            var names = files.filter(function(f, idx) { return processed[idx] !== f; })
+                             .map(function(f) { return f.name; }).join(', ');
+            if (names) showNotification('Cleaned ' + names + ' (standard uploads)');
+          } catch(e) { /* some inputs are read-only */ }
         }
       }).catch(function() {});
     });
@@ -516,10 +525,10 @@
     } catch(e) {}
   }
 
-  // Listen for strip notifications from the main world interceptor
+  // Listen for strip notifications from the main world interceptor (FormData uploads only)
   window.addEventListener('metastrip-stripped', function(e) {
     if (e.detail && e.detail.name) {
-      showNotification(e.detail.name);
+      showNotification('Cleaned ' + e.detail.name + ' (standard uploads)');
     }
   });
 

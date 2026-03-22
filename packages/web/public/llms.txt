@@ -49,6 +49,12 @@ const report = await ms.inspect('photo.jpg');
 const result = await ms.strip('photo.jpg');
 ```
 
+## Browser Extension
+
+The MetaStrip Chrome extension strips metadata from images when you use a standard file picker (forms, job applications, and most websites). It also lets you inspect metadata on any image on the web.
+
+**Limitation:** Gmail, Slack, and Discord use proprietary upload handlers that bypass standard file inputs. The extension cannot reliably intercept uploads in these apps. For Gmail, Slack, and Discord, strip files first using the web tool at metastrip.ai or the CLI before uploading.
+
 ## Documentation
 
 - Getting Started: https://metastrip.ai/docs
