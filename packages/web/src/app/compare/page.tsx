@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import Link from 'next/link';
 import { analyzeFile } from '@/lib/metadata';
 import type { FileAnalysis } from '@/lib/metadata';
 
@@ -407,6 +408,12 @@ export default function ComparePage() {
     <main className="min-h-screen">
       {/* ========== HERO ========== */}
       <section className="max-w-4xl mx-auto px-4 pt-16 pb-8 text-center">
+        <nav aria-label="Breadcrumb" className="text-xs text-text-tertiary mb-6 text-left">
+          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
+          <span className="mx-2">/</span>
+          <span className="text-text-secondary">Compare Files</span>
+        </nav>
+
         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-primary/10 text-primary border border-primary/20 mb-6">
           Files never leave your browser
         </span>

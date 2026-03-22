@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import FeatureRequest from '@/components/feature-request';
 import JsonLd from '@/components/json-ld';
+import Breadcrumbs from '@/components/breadcrumbs';
 
 export const revalidate = 0;
 
@@ -112,12 +113,7 @@ export default function ChangelogPage() {
       />
 
       <div className="min-h-screen py-16 md:py-24 px-4 max-w-3xl mx-auto">
-        {/* Breadcrumb */}
-        <nav className="text-xs text-text-tertiary mb-8">
-          <Link href="/" className="hover:text-primary transition-colors">Home</Link>
-          <span className="mx-2">/</span>
-          <span className="text-text-primary">Changelog</span>
-        </nav>
+        <Breadcrumbs items={[{ name: 'Changelog', href: '/changelog' }]} />
 
         <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-text-primary mb-4">
           Changelog

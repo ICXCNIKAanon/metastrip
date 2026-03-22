@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { MDXRemote } from 'next-mdx-remote/rsc';
 import { getBlogSlugs, getPostBySlug } from '@/lib/blog';
 import JsonLd from '@/components/json-ld';
+import Breadcrumbs from '@/components/breadcrumbs';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -73,6 +74,12 @@ export default async function BlogPostPage({ params }: Props) {
   return (
     <>
       <JsonLd data={articleJsonLd} />
+      <Breadcrumbs
+        items={[
+          { name: 'Blog', href: '/blog' },
+          { name: frontmatter.title, href: `/blog/${slug}` },
+        ]}
+      />
 
       <article className="max-w-3xl mx-auto px-4 pt-16 pb-24">
         {/* Back link */}

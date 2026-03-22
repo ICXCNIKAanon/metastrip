@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import CodeBlock from '@/components/code-block';
+import Breadcrumbs from '@/components/breadcrumbs';
 
 export const metadata: Metadata = {
   title: 'Documentation — MetaStrip',
@@ -83,6 +84,7 @@ const batch = await ms.batch(['a.jpg', 'b.png', 'c.webp']);`;
 export default function DocsPage() {
   return (
     <div className="space-y-16">
+      <Breadcrumbs items={[{ name: 'Documentation', href: '/docs' }]} />
       {/* Supported Formats */}
       <section id="formats">
         <h2 className="text-2xl font-bold text-text-primary mb-4">

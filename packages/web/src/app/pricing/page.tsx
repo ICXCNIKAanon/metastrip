@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import PricingCard from '@/components/pricing-card';
+import Breadcrumbs from '@/components/breadcrumbs';
 
 export const metadata: Metadata = {
   title: 'Pricing — MetaStrip | Free Metadata Remover',
@@ -34,6 +35,7 @@ const ENTERPRISE_FEATURES = [
 export default function PricingPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <Breadcrumbs items={[{ name: 'Pricing', href: '/pricing' }]} />
       {/* Header */}
       <div className="text-center mb-14">
         <h1 className="text-4xl font-extrabold text-center text-text-primary">
