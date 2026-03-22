@@ -83,6 +83,56 @@ const batch = await ms.batch(['a.jpg', 'b.png', 'c.webp']);`;
 export default function DocsPage() {
   return (
     <div className="space-y-16">
+      {/* Supported Formats */}
+      <section id="formats">
+        <h2 className="text-2xl font-bold text-text-primary mb-4">
+          Supported Formats
+        </h2>
+        <p className="text-text-secondary mb-6">
+          MetaStrip supports 14 file formats across images, documents, audio, and video.
+        </p>
+        <div className="overflow-x-auto rounded-card border border-border mb-4">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-border bg-surface">
+                <th className="text-left px-4 py-3 text-text-tertiary font-medium">Format</th>
+                <th className="text-left px-4 py-3 text-text-tertiary font-medium">Type</th>
+                <th className="text-left px-4 py-3 text-text-tertiary font-medium">What Gets Removed</th>
+                <th className="text-left px-4 py-3 text-text-tertiary font-medium">Quality Loss</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                ['JPEG', 'Image', 'EXIF, XMP, IPTC, comments', 'None'],
+                ['PNG', 'Image', 'tEXt, iTXt, zTXt, eXIf chunks', 'None'],
+                ['WebP', 'Image', 'EXIF, XMP chunks', 'None'],
+                ['GIF', 'Image', 'Comment extensions, app extensions', 'None'],
+                ['SVG', 'Image', 'metadata elements, comments, editor data', 'None'],
+                ['PDF', 'Document', 'Author, creator, dates, XMP', 'None'],
+                ['DOCX', 'Document', 'Author, company, revision history', 'None'],
+                ['XLSX', 'Document', 'Author, company, revision history', 'None'],
+                ['PPTX', 'Document', 'Author, company, revision history', 'None'],
+                ['MP3', 'Audio', 'ID3v1, ID3v2 tags', 'None'],
+                ['WAV', 'Audio', 'LIST/INFO, broadcast extension', 'None'],
+                ['FLAC', 'Audio', 'Vorbis comments, cover art', 'None'],
+                ['MP4', 'Video', 'User data, GPS, iTunes metadata', 'None'],
+                ['MOV', 'Video', 'User data, GPS, iTunes metadata', 'None'],
+              ].map(([format, type, removed, quality]) => (
+                <tr key={format} className="border-b border-border/50 last:border-0">
+                  <td className="px-4 py-3 font-mono text-text-primary font-medium">{format}</td>
+                  <td className="px-4 py-3 text-text-secondary">{type}</td>
+                  <td className="px-4 py-3 text-text-secondary">{removed}</td>
+                  <td className="px-4 py-3 text-text-secondary">{quality}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-text-tertiary text-sm">
+          All processing uses binary-level surgery — file content data is never decoded or re-encoded.
+        </p>
+      </section>
+
       {/* Getting Started */}
       <section id="getting-started">
         <h1 className="text-3xl font-bold text-text-primary mb-4">

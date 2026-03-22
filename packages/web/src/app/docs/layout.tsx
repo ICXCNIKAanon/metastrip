@@ -1,5 +1,6 @@
 export default function DocsLayout({ children }: { children: React.ReactNode }) {
   const navLinks = [
+    { label: 'Supported Formats', href: '#formats' },
     { label: 'Getting Started', href: '#getting-started' },
     { label: 'CLI Reference', href: '#cli' },
     { label: 'MCP Server', href: '#mcp-server' },
