@@ -4,6 +4,7 @@ import './globals.css';
 import Nav from '@/components/nav';
 import Footer from '@/components/footer';
 import JsonLd from '@/components/json-ld';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-jetbrains' });
@@ -139,6 +140,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Nav />
         <main id="main-content" className="min-h-screen">{children}</main>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
