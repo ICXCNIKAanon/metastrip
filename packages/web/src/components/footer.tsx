@@ -48,6 +48,14 @@ export default function Footer() {
               </li>
               <li>
                 <Link
+                  href="/compare"
+                  className="text-text-secondary hover:text-text-primary text-sm transition-colors duration-150"
+                >
+                  Compare
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/changelog"
                   className="text-text-secondary hover:text-text-primary text-sm transition-colors duration-150"
                 >
