@@ -21,8 +21,11 @@ export default function GpsMap({ lat, lon }: GpsMapProps) {
   const googleMapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
 
   return (
-    <div className="border border-risk-critical/30 rounded-card overflow-hidden">
-      <div className="h-[200px] md:h-[250px]">
+    <div
+      className="border border-risk-critical/30 rounded-card overflow-hidden"
+      aria-label={`GPS location map showing coordinates ${lat.toFixed(6)}, ${lon.toFixed(6)}`}
+    >
+      <div className="h-[200px] md:h-[250px]" role="img" aria-label={`Map pinpointing GPS coordinates: latitude ${lat.toFixed(6)}, longitude ${lon.toFixed(6)}`}>
         <MapInner lat={lat} lon={lon} />
       </div>
       <div className="px-4 py-3 bg-surface flex flex-col gap-1">

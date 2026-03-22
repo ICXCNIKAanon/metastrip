@@ -133,8 +133,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <JsonLd data={jsonLdData} />
       </head>
       <body className={`${inter.variable} ${jetbrains.variable} ${playfair.variable} font-sans`}>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[60] focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-button focus:text-sm focus:font-semibold">
+          Skip to main content
+        </a>
         <Nav />
-        <main className="min-h-screen">{children}</main>
+        <main id="main-content" className="min-h-screen">{children}</main>
         <Footer />
       </body>
     </html>

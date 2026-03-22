@@ -157,7 +157,7 @@ function SingleView({
       </div>
 
       {/* Side-by-side comparison */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4" aria-label="Before and after comparison">
         {/* Before — red tinted */}
         <div className="bg-risk-critical/5 border border-risk-critical/20 rounded-card p-5 flex flex-col gap-3">
           <p className="text-xs font-semibold text-text-tertiary uppercase tracking-widest">Before</p>

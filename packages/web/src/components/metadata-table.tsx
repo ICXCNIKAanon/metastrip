@@ -37,6 +37,8 @@ export default function MetadataTable({ entries, byCategory }: MetadataTableProp
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        aria-controls="metadata-table-content"
         className="w-full flex items-center justify-between px-4 py-3 text-sm text-text-secondary hover:text-text-primary hover:bg-border/30 transition-colors duration-150"
       >
         <span>
@@ -49,6 +51,7 @@ export default function MetadataTable({ entries, byCategory }: MetadataTableProp
 
       {/* Expandable content */}
       <div
+        id="metadata-table-content"
         className={`transition-all duration-300 overflow-hidden ${
           expanded ? 'max-h-[9999px] opacity-100' : 'max-h-0 opacity-0'
         }`}

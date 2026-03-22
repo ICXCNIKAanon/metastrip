@@ -302,9 +302,12 @@ function SingleFileView({
           {formatBytes(fileSize)} · {getExtension(fileName)} · {entries.length} entries
         </p>
       </div>
-      <div className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-button text-sm font-bold ${RISK_BADGE_CLASSES[riskLevel]}`}>
-        <span className="text-base font-extrabold tabular-nums">{riskScore}</span>
-        <span className="text-xs font-semibold tracking-wide">{RISK_LEVEL_LABELS[riskLevel]}</span>
+      <div
+        className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-button text-sm font-bold ${RISK_BADGE_CLASSES[riskLevel]}`}
+        aria-label={`Privacy risk score: ${riskScore} out of 100, ${RISK_LEVEL_LABELS[riskLevel].toLowerCase()}`}
+      >
+        <span className="text-base font-extrabold tabular-nums" aria-hidden="true">{riskScore}</span>
+        <span className="text-xs font-semibold tracking-wide" aria-hidden="true">{RISK_LEVEL_LABELS[riskLevel]}</span>
       </div>
     </div>
   );
@@ -455,6 +458,8 @@ function BatchView({
               <button
                 type="button"
                 onClick={() => setExpandedIndex(isExpanded ? null : i)}
+                aria-expanded={isExpanded}
+                aria-controls={`file-detail-${i}`}
                 className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-surface/80 transition-colors duration-150"
               >
                 <div className="min-w-0 flex-1">
@@ -473,7 +478,7 @@ function BatchView({
               </button>
 
               {isExpanded && (
-                <div className="border-t border-border p-4">
+                <div id={`file-detail-${i}`} className="border-t border-border p-4">
                   {a.gps && (
                     <>
                       <GpsMap lat={a.gps.lat} lon={a.gps.lon} />

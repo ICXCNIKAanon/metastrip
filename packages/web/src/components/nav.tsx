@@ -31,7 +31,7 @@ export default function Nav() {
           </Link>
 
           {/* Desktop nav links */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
             <Link
               href="/docs"
               className="text-text-secondary hover:text-text-primary text-sm font-medium transition-colors duration-150"
@@ -114,6 +114,8 @@ export default function Nav() {
           <button
             onClick={() => setMobileOpen((prev) => !prev)}
             aria-label="Toggle mobile menu"
+            aria-expanded={mobileOpen}
+            aria-controls="mobile-menu"
             className="md:hidden p-2 rounded-md text-text-secondary hover:text-text-primary transition-colors duration-150"
           >
             {mobileOpen ? (
@@ -131,8 +133,8 @@ export default function Nav() {
 
       {/* Mobile slide-down menu */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-border bg-bg/95 backdrop-blur-sm">
-          <nav className="flex flex-col px-4 py-4 gap-1">
+        <div id="mobile-menu" className="md:hidden border-t border-border bg-bg/95 backdrop-blur-sm">
+          <nav aria-label="Mobile navigation" className="flex flex-col px-4 py-4 gap-1">
             <Link
               href="/docs"
               onClick={() => setMobileOpen(false)}

@@ -164,13 +164,18 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
   return (
     <div className="w-full">
       {/* Hidden file input */}
+      <label htmlFor="drop-zone-file-input" className="sr-only">
+        Select files to strip metadata
+      </label>
       <input
+        id="drop-zone-file-input"
         ref={inputRef}
         type="file"
         accept={ACCEPTED_ATTR}
         multiple
         onChange={handleInputChange}
         className="hidden"
+        tabIndex={-1}
         aria-hidden="true"
       />
 
@@ -178,7 +183,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
       <div
         role="button"
         tabIndex={0}
-        aria-label="Drop images here or click to browse"
+        aria-label="Drop files here to strip metadata, or press Enter to browse"
         onClick={handleClick}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') handleClick();

@@ -28,8 +28,10 @@ export default function FaqAccordion({ items }: FaqAccordionProps) {
           <div key={index} className={isLast ? '' : 'border-b border-border'}>
             <button
               type="button"
+              id={`faq-question-${index}`}
               onClick={() => handleToggle(index)}
               aria-expanded={isOpen}
+              aria-controls={`faq-answer-${index}`}
               className="w-full flex items-center justify-between gap-4 py-4 text-left"
             >
               <span className="text-lg font-semibold text-text-primary">
@@ -46,6 +48,9 @@ export default function FaqAccordion({ items }: FaqAccordionProps) {
 
             {/* Answer — smooth height transition via grid-rows */}
             <div
+              id={`faq-answer-${index}`}
+              role="region"
+              aria-labelledby={`faq-question-${index}`}
               className="grid transition-all duration-200 ease-in-out"
               style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
             >

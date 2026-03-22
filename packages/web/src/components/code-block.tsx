@@ -33,7 +33,7 @@ export default function CodeBlock({ code, language }: CodeBlockProps) {
         <button
           onClick={handleCopy}
           className="flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-primary transition-colors duration-150"
-          aria-label={copied ? 'Copied!' : 'Copy code'}
+          aria-label="Copy code to clipboard"
         >
           {copied ? (
             <>
@@ -43,10 +43,11 @@ export default function CodeBlock({ code, language }: CodeBlockProps) {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
-              <span className="text-primary">Copied!</span>
+              <span className="text-primary" aria-hidden="true">Copied!</span>
             </>
           ) : (
             <>
@@ -56,14 +57,19 @@ export default function CodeBlock({ code, language }: CodeBlockProps) {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden="true"
               >
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
               </svg>
-              <span>Copy</span>
+              <span aria-hidden="true">Copy</span>
             </>
           )}
         </button>
+        {/* Live region to announce copy to screen readers */}
+        <span aria-live="polite" className="sr-only">
+          {copied ? 'Copied' : ''}
+        </span>
       </div>
 
       {/* Code area */}

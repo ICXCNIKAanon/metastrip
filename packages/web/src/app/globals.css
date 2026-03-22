@@ -108,6 +108,12 @@ body {
   background: #0f0f17;
 }
 
+/* Accessible focus styles */
+:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
 /* Leaflet map dark theme overrides */
 .leaflet-container {
   background: #1a2332;

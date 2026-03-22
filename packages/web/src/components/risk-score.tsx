@@ -47,11 +47,18 @@ export default function RiskScore({ score, level }: RiskScoreProps) {
   }, [score]);
 
   return (
-    <div className={`flex flex-col items-center justify-center gap-2 rounded-card p-6 ${bg}`}>
-      <span className={`text-6xl font-extrabold tabular-nums leading-none ${text}`}>
+    <div
+      className={`flex flex-col items-center justify-center gap-2 rounded-card p-6 ${bg}`}
+      role="meter"
+      aria-valuenow={score}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`Privacy risk score: ${score} out of 100, ${level} risk`}
+    >
+      <span className={`text-6xl font-extrabold tabular-nums leading-none ${text}`} aria-hidden="true">
         {displayed}
       </span>
-      <span className={`text-xs font-semibold tracking-widest uppercase ${text} opacity-80`}>
+      <span className={`text-xs font-semibold tracking-widest uppercase ${text} opacity-80`} aria-hidden="true">
         {level} risk
       </span>
     </div>
