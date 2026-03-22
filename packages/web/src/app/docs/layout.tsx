@@ -5,6 +5,9 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
     { label: 'CLI Reference', href: '#cli' },
     { label: 'MCP Server', href: '#mcp-server' },
     { label: 'npm Package', href: '#npm' },
+    { label: 'Browser Extension', href: '#browser-extension' },
+    { label: 'VS Code Extension', href: '#vscode' },
+    { label: 'Git Hooks', href: '#hooks' },
     { label: 'REST API', href: '#api', comingSoon: true },
   ];
 

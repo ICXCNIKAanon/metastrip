@@ -357,6 +357,73 @@ export default function DocsPage() {
         </div>
       </section>
 
+      {/* Browser Extension */}
+      <section id="browser-extension">
+        <h2 className="text-2xl font-bold text-text-primary mb-4">Browser Extension</h2>
+        <p className="text-text-secondary mb-4">
+          The MetaStrip Chrome extension automatically strips metadata from images before you upload
+          them to any website. It also lets you right-click any image on any page to inspect its metadata.
+        </p>
+
+        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Install from GitHub</h3>
+        <ol className="text-text-secondary space-y-2 mb-6 list-decimal list-inside">
+          <li>Download or clone the repo: <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">git clone https://github.com/ICXCNIKAanon/metastrip.git</code></li>
+          <li>Open Chrome and go to <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">chrome://extensions</code></li>
+          <li>Enable <strong className="text-text-primary">Developer mode</strong> (toggle in top-right)</li>
+          <li>Click <strong className="text-text-primary">Load unpacked</strong></li>
+          <li>Select the <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">packages/browser-extension</code> folder</li>
+        </ol>
+
+        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Features</h3>
+        <ul className="text-text-secondary space-y-2 mb-6 list-disc list-inside">
+          <li><strong className="text-text-primary">Auto-strip on upload</strong> — metadata is removed from images before they reach any website</li>
+          <li><strong className="text-text-primary">Right-click → Inspect Metadata</strong> — view GPS, device info, and timestamps on any image</li>
+          <li><strong className="text-text-primary">Scan All Images on Page</strong> — right-click the page to scan every image for metadata</li>
+          <li><strong className="text-text-primary">Drag &amp; paste alerts</strong> — warns when dragged or pasted images contain metadata</li>
+          <li><strong className="text-text-primary">Toggle on/off</strong> — click the extension icon to pause protection</li>
+        </ul>
+      </section>
+
+      {/* VS Code Extension */}
+      <section id="vscode">
+        <h2 className="text-2xl font-bold text-text-primary mb-4">VS Code Extension</h2>
+        <p className="text-text-secondary mb-4">
+          Right-click any image file or folder in VS Code to strip metadata instantly.
+        </p>
+
+        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Install from Source</h3>
+        <CodeBlock language="bash" code={`git clone https://github.com/ICXCNIKAanon/metastrip.git
+cd metastrip/packages/vscode
+npm install && npm run build
+npx @vscode/vsce package
+# Install the .vsix file: code --install-extension metastrip-0.1.0.vsix`} />
+
+        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Usage</h3>
+        <ul className="text-text-secondary space-y-2 mb-6 list-disc list-inside">
+          <li>Right-click any <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">.jpg/.jpeg/.png/.webp</code> file → <strong className="text-text-primary">MetaStrip: Strip Metadata</strong></li>
+          <li>Right-click any folder → <strong className="text-text-primary">MetaStrip: Strip All Images in Folder</strong></li>
+        </ul>
+      </section>
+
+      {/* Git Hooks */}
+      <section id="hooks">
+        <h2 className="text-2xl font-bold text-text-primary mb-4">Git Hooks</h2>
+        <p className="text-text-secondary mb-4">
+          Automatically strip metadata from every image you commit. One command to install, works forever.
+        </p>
+        <CodeBlock language="bash" code={`# Install the pre-commit hook
+npx metastrip-hooks install
+
+# That's it. Every commit now auto-strips image metadata.
+# To uninstall:
+npx metastrip-hooks uninstall`} />
+        <p className="text-text-secondary mt-4 mb-6">
+          Also built into{' '}
+          <a href="https://shipsafe.org" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">ShipSafe</a>
+          {' '}— if you use ShipSafe, metadata stripping is automatic with no extra setup.
+        </p>
+      </section>
+
       {/* REST API */}
       <section id="api">
         <div className="flex items-center gap-3 mb-4">

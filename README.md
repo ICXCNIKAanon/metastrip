@@ -52,6 +52,43 @@ Now any AI agent can use these tools:
 - **compare_metadata** — Before/after metadata diff
 - **batch_strip** — Process multiple files at once
 
+### Browser Extension (Chrome)
+
+Auto-strips metadata from images before you upload them to any website. Right-click any image to inspect its metadata.
+
+**Install from source:**
+1. Clone this repo: `git clone https://github.com/ICXCNIKAanon/metastrip.git`
+2. Open `chrome://extensions` and enable **Developer mode**
+3. Click **Load unpacked** and select `packages/browser-extension`
+
+**Features:**
+- Auto-strip on file upload (any website)
+- Right-click → **Inspect Metadata** on any image
+- Right-click page → **Scan All Images on Page**
+- Drag & paste metadata alerts
+- Toggle on/off via popup
+
+### VS Code Extension
+
+Right-click any image or folder to strip metadata.
+
+```bash
+cd packages/vscode
+npm install && npm run build
+npx @vscode/vsce package
+code --install-extension metastrip-0.1.0.vsix
+```
+
+### Git Hooks
+
+Auto-strip metadata from images on every commit:
+
+```bash
+npx metastrip-hooks install
+```
+
+Also built into [ShipSafe](https://shipsafe.org) — if you use ShipSafe, it's automatic.
+
 ### GitHub Action
 
 Automatically strip metadata from images in pull requests. Zero quality loss — binary-level stripping, no re-encoding.
