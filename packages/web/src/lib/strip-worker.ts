@@ -19,6 +19,10 @@ function injectByFormat(
       return injectFakeMetadataPng(buffer, fake);
     case 'webp':
       return injectFakeMetadataWebp(buffer, fake);
+    case 'gif':
+    case 'svg':
+      // GIF and SVG do not support fake metadata injection — return as-is.
+      return buffer;
   }
 }
 

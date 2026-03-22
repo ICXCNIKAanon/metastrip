@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100 MB
-const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'];
 const ACCEPTED_ATTR = ACCEPTED_TYPES.join(',');
 
 interface DropZoneProps {
@@ -26,7 +26,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
       // Validate all files first
       for (const file of files) {
         if (!ACCEPTED_TYPES.includes(file.type)) {
-          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, or WebP images.`);
+          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, or SVG images.`);
           return;
         }
         if (file.size > MAX_FILE_SIZE) {
@@ -165,7 +165,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
             </p>
             {!isDragging && !isProcessing && (
               <p className="text-sm text-text-secondary">
-                JPEG · PNG · WebP
+                JPEG · PNG · WebP · GIF · SVG
               </p>
             )}
           </div>
