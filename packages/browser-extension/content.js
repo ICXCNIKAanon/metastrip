@@ -159,6 +159,75 @@
   }, true);
 
   // ---------------------------------------------------------------------------
+  // Watch for dynamically created file inputs (Gmail, Slack, etc.)
+  // ---------------------------------------------------------------------------
+
+  var observer = new MutationObserver(function(mutations) {
+    if (!enabled) return;
+    for (var m = 0; m < mutations.length; m++) {
+      var nodes = mutations[m].addedNodes;
+      for (var n = 0; n < nodes.length; n++) {
+        var node = nodes[n];
+        if (node.nodeType !== 1) continue;
+        // Check the node itself
+        if (node.tagName === 'INPUT' && node.type === 'file') {
+          attachFileListener(node);
+        }
+        // Check children
+        if (node.querySelectorAll) {
+          var inputs = node.querySelectorAll('input[type="file"]');
+          for (var i = 0; i < inputs.length; i++) {
+            attachFileListener(inputs[i]);
+          }
+        }
+      }
+    }
+  });
+
+  var attachedInputs = new WeakSet();
+
+  function attachFileListener(input) {
+    if (attachedInputs.has(input)) return;
+    attachedInputs.add(input);
+
+    input.addEventListener('change', function() {
+      if (!enabled || !input.files || input.files.length === 0) return;
+
+      var files = Array.from(input.files);
+      var promises = files.map(function(f) { return processFile(f); });
+
+      Promise.all(promises).then(function(processed) {
+        var anyStripped = false;
+        for (var i = 0; i < processed.length; i++) {
+          if (processed[i] !== files[i]) { anyStripped = true; break; }
+        }
+        if (anyStripped) {
+          var dt = new DataTransfer();
+          for (var i = 0; i < processed.length; i++) { dt.items.add(processed[i]); }
+          try { input.files = dt.files; } catch(e) { /* some inputs are read-only */ }
+        }
+      }).catch(function() {});
+    });
+  }
+
+  // Start observing after DOM is ready
+  if (document.body) {
+    observer.observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', function() {
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
+  }
+
+  // Also attach to any existing file inputs on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    var existing = document.querySelectorAll('input[type="file"]');
+    for (var i = 0; i < existing.length; i++) {
+      attachFileListener(existing[i]);
+    }
+  });
+
+  // ---------------------------------------------------------------------------
   // Drag-and-drop interception (alert mode — DataTransfer.files is read-only)
   // ---------------------------------------------------------------------------
 

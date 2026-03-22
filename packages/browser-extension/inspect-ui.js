@@ -107,26 +107,65 @@ window.__metastrip = window.__metastrip || {};
       if (lonRef && lonRef.indexOf('W') >= 0) lon = -lon;
 
       var gpsBox = document.createElement('div');
-      gpsBox.style.cssText = 'margin:0 20px 16px;padding:12px;border-radius:10px;background:rgba(239,68,68,0.06);border-left:3px solid #ef4444;';
+      gpsBox.style.cssText = 'margin:0 20px 16px;border-radius:12px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);overflow:hidden;';
 
-      var gpsTitle = document.createElement('div');
-      gpsTitle.style.cssText = 'font-size:13px;font-weight:700;color:#ef4444;margin-bottom:4px;';
-      gpsTitle.textContent = '\u{1F4CD} GPS Location Found';
+      // Embedded map using OpenStreetMap static tile
+      var mapContainer = document.createElement('a');
+      mapContainer.href = 'https://www.google.com/maps?q=' + lat + ',' + lon;
+      mapContainer.target = '_blank';
+      mapContainer.rel = 'noopener';
+      mapContainer.style.cssText = 'display:block;position:relative;height:180px;background:#1a2332;overflow:hidden;cursor:pointer;';
 
-      var gpsCoords = document.createElement('div');
-      gpsCoords.style.cssText = 'font-size:12px;font-family:monospace;color:#fca5a5;';
-      gpsCoords.textContent = lat.toFixed(6) + ', ' + lon.toFixed(6);
+      // Use OpenStreetMap tile as static map background
+      var zoom = 13;
+      var tileX = Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
+      var tileY = Math.floor((1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * Math.pow(2, zoom));
 
-      var gpsLink = document.createElement('a');
-      gpsLink.href = 'https://www.google.com/maps?q=' + lat + ',' + lon;
-      gpsLink.target = '_blank';
-      gpsLink.rel = 'noopener';
-      gpsLink.style.cssText = 'font-size:11px;color:#60a5fa;text-decoration:none;display:block;margin-top:4px;';
-      gpsLink.textContent = 'View on Google Maps \u2192';
+      // Load a 3x3 grid of tiles centered on the location
+      for (var tx = -1; tx <= 1; tx++) {
+        for (var ty = -1; ty <= 1; ty++) {
+          var tile = document.createElement('img');
+          tile.src = 'https://a.basemaps.cartocdn.com/dark_all/' + zoom + '/' + (tileX + tx) + '/' + (tileY + ty) + '.png';
+          tile.style.cssText = 'position:absolute;width:256px;height:256px;left:' + ((tx + 1) * 256 - 128 - 42) + 'px;top:' + ((ty + 1) * 256 - 128 - 38) + 'px;opacity:0.85;';
+          tile.draggable = false;
+          mapContainer.appendChild(tile);
+        }
+      }
 
-      gpsBox.appendChild(gpsTitle);
-      gpsBox.appendChild(gpsCoords);
-      gpsBox.appendChild(gpsLink);
+      // Red pin marker in center
+      var pin = document.createElement('div');
+      pin.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-100%);z-index:2;';
+      pin.innerHTML = '<svg width="24" height="36" viewBox="0 0 24 36"><path d="M12 0C5.4 0 0 5.4 0 12c0 9 12 24 12 24s12-15 12-24C24 5.4 18.6 0 12 0z" fill="#ef4444"/><circle cx="12" cy="12" r="5" fill="#fff"/></svg>';
+      mapContainer.appendChild(pin);
+
+      // "View on Google Maps" overlay
+      var mapOverlay = document.createElement('div');
+      mapOverlay.style.cssText = 'position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.7));padding:8px 12px;display:flex;justify-content:space-between;align-items:center;z-index:2;';
+      var coordsEl = document.createElement('span');
+      coordsEl.style.cssText = 'font-size:11px;font-family:monospace;color:#fca5a5;';
+      coordsEl.textContent = lat.toFixed(6) + ', ' + lon.toFixed(6);
+      var viewLink = document.createElement('span');
+      viewLink.style.cssText = 'font-size:11px;color:#60a5fa;';
+      viewLink.textContent = 'View on Google Maps \u2192';
+      mapOverlay.appendChild(coordsEl);
+      mapOverlay.appendChild(viewLink);
+      mapContainer.appendChild(mapOverlay);
+
+      gpsBox.appendChild(mapContainer);
+
+      // Warning text below map
+      var gpsWarning = document.createElement('div');
+      gpsWarning.style.cssText = 'padding:10px 12px;border-top:1px solid rgba(239,68,68,0.15);';
+      var warnTitle = document.createElement('div');
+      warnTitle.style.cssText = 'font-size:12px;font-weight:700;color:#ef4444;margin-bottom:2px;';
+      warnTitle.textContent = '\u{1F4CD} GPS Location Found';
+      var warnText = document.createElement('div');
+      warnText.style.cssText = 'font-size:11px;color:#fca5a5;';
+      warnText.textContent = 'Anyone with this image can see exactly where it was taken.';
+      gpsWarning.appendChild(warnTitle);
+      gpsWarning.appendChild(warnText);
+      gpsBox.appendChild(gpsWarning);
+
       overlay.appendChild(gpsBox);
     }
 
