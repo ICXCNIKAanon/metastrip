@@ -35,7 +35,7 @@ const FAQ_ITEMS = [
   {
     question: 'What file formats are supported?',
     answer:
-      'The browser tool supports JPEG, PNG, and WebP images. Our CLI tool supports 20 formats in total, including GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, HEIC/HEIF (iPhone photos), AVIF (modern web images), M4A/AAC (Apple audio), AVI, MKV/WebM (video), and EPUB (ebooks). Install it with: npm install -g @metastrip/cli',
+      'MetaStrip supports 20 formats across images, documents, audio, and video: JPEG, PNG, WebP, GIF, SVG, HEIC/HEIF, AVIF, PDF, DOCX, XLSX, PPTX, EPUB, MP3, WAV, FLAC, M4A, MP4, MOV, AVI, and MKV/WebM. All formats work in the browser and the CLI.',
   },
   {
     question: 'Will stripping metadata reduce image quality?',
