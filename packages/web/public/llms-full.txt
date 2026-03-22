@@ -1,6 +1,6 @@
 # MetaStrip — Full Documentation
 
-> MetaStrip is a free, open-source metadata removal tool for images, documents, audio, and video. It strips GPS coordinates, device identifiers, timestamps, AI generation markers, and all other hidden metadata from 14 file formats. Available as a web tool, CLI, npm package, MCP server for AI agents, and pre-commit git hooks. Processing is 100% client-side (browser) or local (CLI) — files never leave the user's device.
+> MetaStrip is a free, open-source metadata removal tool for images, documents, audio, and video. It strips GPS coordinates, device identifiers, timestamps, AI generation markers, and all other hidden metadata from 20 file formats. Available as a web tool, CLI, npm package, MCP server for AI agents, and pre-commit git hooks. Processing is 100% client-side (browser) or local (CLI) — files never leave the user's device.
 
 ## Table of Contents
 
@@ -36,7 +36,7 @@ MetaStrip makes it trivially easy to see what your photos reveal and remove it a
 - **Processing**: 100% client-side (browser) or local (CLI). Zero server uploads for images.
 - **Quality**: Zero quality loss — binary-level metadata surgery, no image re-encoding.
 - **Formats (browser)**: JPEG, PNG, WebP
-- **Formats (CLI/npm/MCP)**: JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV
+- **Formats (CLI/npm/MCP)**: JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, HEIC/HEIF, AVIF, M4A/AAC, AVI, MKV/WebM, EPUB
 
 ### npm Packages
 
@@ -447,7 +447,7 @@ This installs a `pre-commit` hook in your repository's `.git/hooks/` directory. 
 1. You stage image files with `git add`
 2. You run `git commit`
 3. The pre-commit hook intercepts the commit
-4. It scans all staged JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, and MOV files
+4. It scans all staged JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, HEIC/HEIF, AVIF, M4A/AAC, AVI, MKV/WebM, and EPUB files
 5. It strips all metadata (GPS, device info, timestamps, etc.) with zero quality loss
 6. The clean files are re-staged automatically
 7. The commit proceeds with clean images
@@ -600,6 +600,12 @@ MetaStrip removes all metadata that could identify, locate, or track a person. H
 | FLAC | .flac | Audio | Vorbis comments, cover art | No | Yes | Yes | Yes |
 | MP4 | .mp4 | Video | User data, GPS, iTunes metadata | No | Yes | Yes | Yes |
 | MOV | .mov | Video | User data, GPS, iTunes metadata | No | Yes | Yes | Yes |
+| HEIC/HEIF | .heic, .heif | Image | udta box, GPS, iTunes metadata | No | Yes | Yes | Yes |
+| AVIF | .avif | Image | udta box, GPS, iTunes metadata | No | Yes | Yes | Yes |
+| M4A | .m4a | Audio | udta box, iTunes metadata | No | Yes | Yes | Yes |
+| AVI | .avi | Video | LIST/INFO, JUNK | No | Yes | Yes | Yes |
+| MKV/WebM | .mkv, .webm | Video | Tags element | No | Yes | Yes | Yes |
+| EPUB | .epub | Document | DC metadata (creator, publisher, date, rights) | No | Yes | Yes | Yes |
 
 All processing uses binary-level surgery — file content data is never decoded or re-encoded.
 
@@ -672,7 +678,7 @@ The MCP server runs locally and communicates only with the MCP client (e.g., Cla
 | **AI agent integration** | Yes — MCP server | No |
 | **Pre-commit git hooks** | Yes (`@metastrip/hooks`) | No (requires manual scripting) |
 | **Privacy risk scoring** | Yes (0–100 risk score) | No |
-| **Format support** | 14 formats | 400+ formats |
+| **Format support** | 20 formats | 400+ formats |
 | **Granular control** | Strip all or nothing | Fine-grained per-field control |
 | **Installation** | `npm install -g @metastrip/cli` | Platform-specific install |
 | **Read metadata** | Yes | Yes (more fields) |

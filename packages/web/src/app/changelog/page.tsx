@@ -32,7 +32,7 @@ const changelog: ChangelogEntry[] = [
     date: 'March 22, 2026',
     highlights: [
       'Custom metadata injection: type any address → geocodes to GPS coordinates via OpenStreetMap, set custom device make/model, pick any date/time',
-      '14 file formats: added GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV — all with zero quality loss',
+      '20 file formats: added GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, HEIC/HEIF (iPhone photos), AVIF (modern web images), M4A/AAC (Apple audio), AVI, MKV/WebM (video), EPUB (ebooks) — all with zero quality loss',
       'File comparison mode at /compare: upload two files to detect if same device (serial number + camera matching)',
       'Chrome extension: embedded dark map with pin for GPS locations in inspect panel',
       'Chrome extension: network-level interception (fetch/XHR) for broader upload coverage',

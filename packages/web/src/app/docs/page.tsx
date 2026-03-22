@@ -89,7 +89,7 @@ export default function DocsPage() {
           Supported Formats
         </h2>
         <p className="text-text-secondary mb-6">
-          MetaStrip supports 14 file formats across images, documents, audio, and video.
+          MetaStrip supports 20 file formats across images, documents, audio, and video.
         </p>
         <div className="overflow-x-auto rounded-card border border-border mb-4">
           <table className="w-full text-sm border-collapse">
@@ -117,6 +117,12 @@ export default function DocsPage() {
                 ['FLAC', 'Audio', 'Vorbis comments, cover art', 'None'],
                 ['MP4', 'Video', 'User data, GPS, iTunes metadata', 'None'],
                 ['MOV', 'Video', 'User data, GPS, iTunes metadata', 'None'],
+                ['HEIC/HEIF', 'Image', 'udta box, GPS, iTunes metadata', 'None'],
+                ['AVIF', 'Image', 'udta box, GPS, iTunes metadata', 'None'],
+                ['M4A', 'Audio', 'udta box, iTunes metadata', 'None'],
+                ['AVI', 'Video', 'LIST/INFO, JUNK', 'None'],
+                ['MKV/WebM', 'Video', 'Tags element', 'None'],
+                ['EPUB', 'Document', 'DC metadata (creator, publisher, date, rights)', 'None'],
               ].map(([format, type, removed, quality]) => (
                 <tr key={format} className="border-b border-border/50 last:border-0">
                   <td className="px-4 py-3 font-mono text-text-primary font-medium">{format}</td>

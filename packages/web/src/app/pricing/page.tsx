@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 const FREE_FEATURES = [
   'Unlimited file processing',
-  '14 formats: images, docs, audio, video',
+  '20 formats: images, docs, audio, video',
   'Client-side processing — files never leave your browser',
   'No signup required',
   'Zero quality loss',

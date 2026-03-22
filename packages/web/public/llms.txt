@@ -1,6 +1,6 @@
 # MetaStrip
 
-> MetaStrip is a free, client-side metadata removal tool for images, documents, audio, and video. It strips GPS coordinates, device identifiers, timestamps, and other hidden metadata from 14 file formats. Files never leave your device.
+> MetaStrip is a free, client-side metadata removal tool for images, documents, audio, and video. It strips GPS coordinates, device identifiers, timestamps, and other hidden metadata from 20 file formats. Files never leave your device.
 
 ## Key Facts
 
@@ -9,7 +9,7 @@
 - Processing: 100% client-side (browser-based), zero server uploads for images
 - Quality: Zero quality loss — binary-level metadata surgery, no image re-encoding
 - Formats (browser): JPEG, PNG, WebP
-- Formats (CLI/npm/MCP): JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV
+- Formats (CLI/npm/MCP): JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, HEIC/HEIF, AVIF, M4A/AAC, AVI, MKV/WebM, EPUB
 - npm packages: @metastrip/core, @metastrip/cli, @metastrip/mcp-server
 - License: MIT
 - GitHub: https://github.com/ICXCNIKAanon/metastrip
