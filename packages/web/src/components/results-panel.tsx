@@ -4,15 +4,25 @@ import { useState } from 'react';
 import type { FileAnalysis } from '@/lib/metadata';
 import { CATEGORY_ICONS } from '@/lib/categories';
 import type { MetadataCategory } from '@/lib/categories';
+import type { CustomMetadata } from '@/lib/fake-metadata';
+import { geocodeAddress } from '@/lib/fake-metadata';
 import RiskScore from '@/components/risk-score';
 import GpsMap from '@/components/gps-map';
 import MetadataTable from '@/components/metadata-table';
+
+type InjectMode = 'off' | 'random' | 'custom';
 
 interface ResultsPanelProps {
   analysis?: FileAnalysis;
   analyses?: FileAnalysis[];
   onStrip: () => void;
+  injectMode?: InjectMode;
+  onInjectModeChange?: (mode: InjectMode) => void;
+  customMetadata?: CustomMetadata | null;
+  onCustomMetadataChange?: (meta: CustomMetadata | null) => void;
+  /** @deprecated Use injectMode instead */
   injectFake?: boolean;
+  /** @deprecated Use onInjectModeChange instead */
   onToggleInject?: (value: boolean) => void;
 }
 
@@ -57,36 +67,222 @@ function getExtension(fileName: string): string {
 /* ------------------------------------------------------------------ */
 /* Single-file detail view                                            */
 /* ------------------------------------------------------------------ */
-function InjectToggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+
+function InjectPanel({
+  mode,
+  onModeChange,
+  customMetadata,
+  onCustomMetadataChange,
+}: {
+  mode: InjectMode;
+  onModeChange: (m: InjectMode) => void;
+  customMetadata: CustomMetadata | null;
+  onCustomMetadataChange: (m: CustomMetadata | null) => void;
+}) {
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeResult, setGeocodeResult] = useState<string | null>(null);
+  const [geocodeError, setGeocodeError] = useState<string | null>(null);
+
+  const enabled = mode !== 'off';
+  const custom = customMetadata || {};
+
+  const updateCustom = (patch: Partial<CustomMetadata>) => {
+    onCustomMetadataChange({ ...custom, ...patch });
+  };
+
+  const handleLookup = async () => {
+    if (!custom.address?.trim()) return;
+    setGeocoding(true);
+    setGeocodeResult(null);
+    setGeocodeError(null);
+    const result = await geocodeAddress(custom.address);
+    if (result) {
+      updateCustom({
+        gps: { lat: result.lat, lon: result.lon, name: result.displayName },
+      });
+      setGeocodeResult(`${result.lat.toFixed(4)}, ${result.lon.toFixed(4)}`);
+    } else {
+      setGeocodeError('Could not resolve address');
+    }
+    setGeocoding(false);
+  };
+
   return (
-    <label className="flex items-center justify-between gap-3 bg-surface border border-border rounded-card p-4 cursor-pointer select-none">
-      <div className="min-w-0">
-        <p className="text-sm font-semibold text-text-primary">Inject decoy metadata</p>
-        <p className="text-xs text-text-tertiary mt-0.5">
-          Adds fake GPS, device, and timestamp data to confuse trackers
-        </p>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-          checked ? 'bg-primary' : 'bg-border'
-        }`}
-      >
-        <span
-          aria-hidden="true"
-          className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-            checked ? 'translate-x-5' : 'translate-x-0'
+    <div className="bg-surface border border-border rounded-card overflow-hidden">
+      {/* Toggle row */}
+      <label className="flex items-center justify-between gap-3 p-4 cursor-pointer select-none">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-text-primary">Inject decoy metadata</p>
+          <p className="text-xs text-text-tertiary mt-0.5">
+            Adds fake GPS, device, and timestamp data to confuse trackers
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          onClick={() => onModeChange(enabled ? 'off' : 'random')}
+          className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+            enabled ? 'bg-primary' : 'bg-border'
           }`}
-        />
-      </button>
-    </label>
+        >
+          <span
+            aria-hidden="true"
+            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+              enabled ? 'translate-x-5' : 'translate-x-0'
+            }`}
+          />
+        </button>
+      </label>
+
+      {/* Expanded panel when enabled */}
+      {enabled && (
+        <div className="border-t border-border px-4 pb-4 pt-3 space-y-4">
+          {/* Mode selector */}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onModeChange('random')}
+              className={`flex-1 text-xs font-semibold py-2 rounded-button transition-colors ${
+                mode === 'random'
+                  ? 'bg-primary text-white'
+                  : 'bg-background text-text-secondary hover:text-text-primary border border-border'
+              }`}
+            >
+              Random
+            </button>
+            <button
+              type="button"
+              onClick={() => onModeChange('custom')}
+              className={`flex-1 text-xs font-semibold py-2 rounded-button transition-colors ${
+                mode === 'custom'
+                  ? 'bg-primary text-white'
+                  : 'bg-background text-text-secondary hover:text-text-primary border border-border'
+              }`}
+            >
+              Custom
+            </button>
+          </div>
+
+          {/* Custom fields */}
+          {mode === 'custom' && (
+            <div className="space-y-3">
+              {/* Location */}
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">
+                  Location
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="1600 Pennsylvania Ave, Washington DC"
+                    value={custom.address || ''}
+                    onChange={(e) => {
+                      updateCustom({ address: e.target.value });
+                      setGeocodeResult(null);
+                      setGeocodeError(null);
+                    }}
+                    className="flex-1 bg-background border border-border rounded-button px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleLookup}
+                    disabled={geocoding || !custom.address?.trim()}
+                    className="px-3 py-2 text-xs font-semibold rounded-button bg-primary text-white hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                  >
+                    {geocoding ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Looking up...
+                      </span>
+                    ) : (
+                      'Lookup'
+                    )}
+                  </button>
+                </div>
+                {geocodeResult && (
+                  <p className="text-xs text-primary mt-1 font-mono">
+                    Resolved: {geocodeResult}
+                  </p>
+                )}
+                {geocodeError && (
+                  <p className="text-xs text-risk-high mt-1">{geocodeError}</p>
+                )}
+              </div>
+
+              {/* Device */}
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">
+                  Device
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Samsung"
+                    value={custom.deviceMake || ''}
+                    onChange={(e) => updateCustom({ deviceMake: e.target.value })}
+                    className="flex-1 bg-background border border-border rounded-button px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Galaxy S24 Ultra"
+                    value={custom.deviceModel || ''}
+                    onChange={(e) => updateCustom({ deviceModel: e.target.value })}
+                    className="flex-1 bg-background border border-border rounded-button px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Date & Time */}
+              <div>
+                <label className="block text-xs font-semibold text-text-secondary mb-1">
+                  Date & Time
+                </label>
+                <input
+                  type="datetime-local"
+                  value={custom.dateTime ? custom.dateTime.replace(/^(\d{4}):(\d{2}):(\d{2}) /, '$1-$2-$3T') : ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v) {
+                      // Convert "2024-06-15T14:30" to EXIF format "2024:06:15 14:30:00"
+                      const exif = v.replace(/-/g, ':').replace('T', ' ') + (v.length <= 16 ? ':00' : '');
+                      updateCustom({ dateTime: exif });
+                    } else {
+                      updateCustom({ dateTime: undefined });
+                    }
+                  }}
+                  className="w-full bg-background border border-border rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent [color-scheme:dark]"
+                />
+              </div>
+            </div>
+          )}
+
+          {mode === 'random' && (
+            <p className="text-xs text-text-tertiary">
+              A random famous landmark and retro device will be injected each time.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
-function SingleFileView({ analysis, onStrip, injectFake, onToggleInject }: { analysis: FileAnalysis; onStrip: () => void; injectFake?: boolean; onToggleInject?: (v: boolean) => void }) {
+function SingleFileView({
+  analysis,
+  onStrip,
+  injectMode = 'off',
+  onInjectModeChange,
+  customMetadata = null,
+  onCustomMetadataChange,
+}: {
+  analysis: FileAnalysis;
+  onStrip: () => void;
+  injectMode?: InjectMode;
+  onInjectModeChange?: (m: InjectMode) => void;
+  customMetadata?: CustomMetadata | null;
+  onCustomMetadataChange?: (m: CustomMetadata | null) => void;
+}) {
   const { fileName, fileSize, riskScore, riskLevel, entries, byCategory, gps } = analysis;
 
   const categoriesWithEntries = (
@@ -132,8 +328,13 @@ function SingleFileView({ analysis, onStrip, injectFake, onToggleInject }: { ana
     </div>
   );
 
-  const injectToggle = onToggleInject ? (
-    <InjectToggle checked={injectFake ?? false} onChange={onToggleInject} />
+  const injectToggle = onInjectModeChange ? (
+    <InjectPanel
+      mode={injectMode}
+      onModeChange={onInjectModeChange}
+      customMetadata={customMetadata ?? null}
+      onCustomMetadataChange={onCustomMetadataChange ?? (() => {})}
+    />
   ) : null;
 
   const ctaButton = (
@@ -205,7 +406,21 @@ function SingleFileView({ analysis, onStrip, injectFake, onToggleInject }: { ana
 /* ------------------------------------------------------------------ */
 /* Batch summary view                                                 */
 /* ------------------------------------------------------------------ */
-function BatchView({ analyses, onStrip, injectFake, onToggleInject }: { analyses: FileAnalysis[]; onStrip: () => void; injectFake?: boolean; onToggleInject?: (v: boolean) => void }) {
+function BatchView({
+  analyses,
+  onStrip,
+  injectMode = 'off',
+  onInjectModeChange,
+  customMetadata = null,
+  onCustomMetadataChange,
+}: {
+  analyses: FileAnalysis[];
+  onStrip: () => void;
+  injectMode?: InjectMode;
+  onInjectModeChange?: (m: InjectMode) => void;
+  customMetadata?: CustomMetadata | null;
+  onCustomMetadataChange?: (m: CustomMetadata | null) => void;
+}) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const totalEntries = analyses.reduce((sum, a) => sum + a.entries.length, 0);
@@ -282,8 +497,13 @@ function BatchView({ analyses, onStrip, injectFake, onToggleInject }: { analyses
       </div>
 
       {/* Inject toggle */}
-      {onToggleInject && (
-        <InjectToggle checked={injectFake ?? false} onChange={onToggleInject} />
+      {onInjectModeChange && (
+        <InjectPanel
+          mode={injectMode}
+          onModeChange={onInjectModeChange}
+          customMetadata={customMetadata ?? null}
+          onCustomMetadataChange={onCustomMetadataChange ?? (() => {})}
+        />
       )}
 
       {/* CTA */}
@@ -301,15 +521,48 @@ function BatchView({ analyses, onStrip, injectFake, onToggleInject }: { analyses
 /* ------------------------------------------------------------------ */
 /* Main export — chooses single vs batch view                         */
 /* ------------------------------------------------------------------ */
-export default function ResultsPanel({ analysis, analyses, onStrip, injectFake, onToggleInject }: ResultsPanelProps) {
+export default function ResultsPanel({
+  analysis,
+  analyses,
+  onStrip,
+  injectMode,
+  onInjectModeChange,
+  customMetadata,
+  onCustomMetadataChange,
+  // Legacy props — convert to new API
+  injectFake,
+  onToggleInject,
+}: ResultsPanelProps) {
   // Build the effective list: prefer `analyses` array, fall back to single `analysis`
   const list = analyses ?? (analysis ? [analysis] : []);
 
   if (list.length === 0) return null;
 
+  // Support legacy props as fallback
+  const effectiveMode: InjectMode = injectMode ?? (injectFake ? 'random' : 'off');
+  const effectiveModeChange = onInjectModeChange ?? (onToggleInject ? ((m: InjectMode) => onToggleInject(m !== 'off')) : undefined);
+
   if (list.length === 1) {
-    return <SingleFileView analysis={list[0]} onStrip={onStrip} injectFake={injectFake} onToggleInject={onToggleInject} />;
+    return (
+      <SingleFileView
+        analysis={list[0]}
+        onStrip={onStrip}
+        injectMode={effectiveMode}
+        onInjectModeChange={effectiveModeChange}
+        customMetadata={customMetadata}
+        onCustomMetadataChange={onCustomMetadataChange}
+      />
+    );
   }
 
-  return <BatchView analyses={list} onStrip={onStrip} injectFake={injectFake} onToggleInject={onToggleInject} />;
+  return (
+    <BatchView
+      analyses={list}
+      onStrip={onStrip}
+      injectMode={effectiveMode}
+      onInjectModeChange={effectiveModeChange}
+      customMetadata={customMetadata}
+      onCustomMetadataChange={onCustomMetadataChange}
+    />
+  );
 }

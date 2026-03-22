@@ -8,6 +8,7 @@ import CodeBlock from '@/components/code-block';
 import FaqAccordion from '@/components/faq-accordion';
 import { analyzeFile } from '@/lib/metadata';
 import type { FileAnalysis } from '@/lib/metadata';
+import type { CustomMetadata } from '@/lib/fake-metadata';
 import ShipSafeBadge from '@/components/shipsafe-badge';
 import JsonLd from '@/components/json-ld';
 import FeatureRequest from '@/components/feature-request';
@@ -49,7 +50,8 @@ export default function Home() {
   const [strippedResults, setStrippedResults] = useState<StrippedResult[]>([]);
   const [processingTimeMs, setProcessingTimeMs] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
-  const [injectFake, setInjectFake] = useState(false);
+  const [injectMode, setInjectMode] = useState<'off' | 'random' | 'custom'>('off');
+  const [customMetadata, setCustomMetadata] = useState<CustomMetadata | null>(null);
 
   // Keep refs to the original buffers for the web worker
   const buffersRef = useRef<ArrayBuffer[]>([]);
@@ -100,7 +102,16 @@ export default function Home() {
       const fileName = files[currentIndex]?.file.name ?? `file-${currentIndex}`;
 
       const worker = new Worker(new URL('../lib/strip-worker.ts', import.meta.url));
-      worker.postMessage({ buffer: bufferCopy, inject: injectFake }, { transfer: [bufferCopy] });
+      worker.postMessage(
+        {
+          buffer: bufferCopy,
+          inject: injectMode !== 'off',
+          injectMode,
+          customMetadata,
+          fileName,
+        },
+        { transfer: [bufferCopy] },
+      );
       worker.onmessage = (e) => {
         if (e.data.success) {
           results.push({
@@ -125,7 +136,7 @@ export default function Home() {
     }
 
     processNext();
-  }, [files, injectFake]);
+  }, [files, injectMode, customMetadata]);
 
   const handleReset = useCallback(() => {
     setFiles([]);
@@ -174,8 +185,10 @@ export default function Home() {
           <ResultsPanel
             analyses={analyses}
             onStrip={handleStrip}
-            injectFake={injectFake}
-            onToggleInject={setInjectFake}
+            injectMode={injectMode}
+            onInjectModeChange={setInjectMode}
+            customMetadata={customMetadata}
+            onCustomMetadataChange={setCustomMetadata}
           />
         )}
 

@@ -1,10 +1,10 @@
 /// <reference lib="webworker" />
 import { stripMetadata } from './stripper';
-import { getRandomFakeMetadata, formatFakeMetadataSummary } from './fake-metadata';
+import { getRandomFakeMetadata, formatFakeMetadataSummary, customToFakeMetadata } from './fake-metadata';
 import { injectFakeMetadataJpeg } from './inject-jpeg';
 import { injectFakeMetadataPng } from './inject-png';
 import { injectFakeMetadataWebp } from './inject-webp';
-import type { FakeMetadata } from './fake-metadata';
+import type { FakeMetadata, CustomMetadata } from './fake-metadata';
 import type { SupportedFormat } from './stripper';
 
 function injectByFormat(
@@ -35,14 +35,30 @@ function injectByFormat(
   }
 }
 
+interface WorkerMessage {
+  buffer: ArrayBuffer;
+  inject?: boolean;
+  injectMode?: 'off' | 'random' | 'custom';
+  customMetadata?: CustomMetadata | null;
+  fileName?: string;
+}
+
 const ctx = self as unknown as DedicatedWorkerGlobalScope;
 
-ctx.onmessage = async (event: MessageEvent<{ buffer: ArrayBuffer; inject?: boolean; fileName?: string }>) => {
+ctx.onmessage = async (event: MessageEvent<WorkerMessage>) => {
   try {
+    const { inject, injectMode, customMetadata } = event.data;
     const result = await stripMetadata(event.data.buffer, event.data.fileName);
 
-    if (event.data.inject) {
-      const fake = getRandomFakeMetadata();
+    if (inject) {
+      let fake: FakeMetadata;
+
+      if (injectMode === 'custom' && customMetadata) {
+        fake = customToFakeMetadata(customMetadata);
+      } else {
+        fake = getRandomFakeMetadata();
+      }
+
       const injected = injectByFormat(result.buffer, result.format, fake);
       ctx.postMessage(
         {

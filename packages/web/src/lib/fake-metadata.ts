@@ -78,3 +78,59 @@ export function formatFakeMetadataSummary(fake: FakeMetadata): string {
   const date = fake.dateTime.split(' ')[0].replace(/:/g, '-');
   return `${device} · ${location} · ${date}`;
 }
+
+// ---------------------------------------------------------------------------
+// Custom metadata types and helpers
+// ---------------------------------------------------------------------------
+
+export interface CustomMetadata {
+  address?: string;
+  gps?: { lat: number; lon: number; name: string };
+  deviceMake?: string;
+  deviceModel?: string;
+  dateTime?: string;
+}
+
+/**
+ * Geocodes an address string to lat/lon using the free Nominatim API (OpenStreetMap).
+ * Returns null if the address cannot be resolved.
+ */
+export async function geocodeAddress(
+  address: string,
+): Promise<{ lat: number; lon: number; displayName: string } | null> {
+  try {
+    const encoded = encodeURIComponent(address);
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
+      {
+        headers: { 'User-Agent': 'MetaStrip/1.0 (https://metastrip.ai)' },
+      },
+    );
+    const data = await res.json();
+    if (data && data.length > 0) {
+      return {
+        lat: parseFloat(data[0].lat),
+        lon: parseFloat(data[0].lon),
+        displayName: data[0].display_name,
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Converts user-supplied CustomMetadata into the FakeMetadata format
+ * expected by the inject-* modules.
+ */
+export function customToFakeMetadata(custom: CustomMetadata): FakeMetadata {
+  return {
+    gps: custom.gps || { lat: 0, lon: 0, name: 'Unknown' },
+    device: {
+      make: custom.deviceMake || 'Unknown',
+      model: custom.deviceModel || 'Unknown',
+    },
+    dateTime: custom.dateTime || '2024:01:01 12:00:00',
+  };
+}
