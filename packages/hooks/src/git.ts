@@ -1,7 +1,14 @@
 import { execSync, execFileSync } from 'child_process';
 import * as path from 'path';
 
-const SUPPORTED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+const SUPPORTED_EXTENSIONS = new Set([
+  '.jpg', '.jpeg', '.png', '.webp',
+  '.gif', '.svg', '.pdf',
+  '.docx', '.xlsx', '.pptx',
+  '.mp3', '.wav', '.flac',
+  '.mp4', '.mov', '.heic', '.avif', '.m4a', '.avi', '.mkv',
+  '.epub',
+]);
 
 export function getStagedImageFiles(): string[] {
   try {

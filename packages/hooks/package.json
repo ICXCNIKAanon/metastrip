@@ -7,21 +7,34 @@
   "bin": {
     "metastrip-hooks": "dist/cli.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
   },
   "devDependencies": {
+    "@types/node": "^20.11.0",
     "typescript": "^5.3.3",
-    "vitest": "^3.2.1",
-    "@types/node": "^20.11.0"
+    "vitest": "^3.2.1"
   },
-  "keywords": ["metastrip", "git-hooks", "pre-commit", "exif", "metadata", "privacy", "strip"],
+  "keywords": [
+    "metastrip",
+    "git-hooks",
+    "pre-commit",
+    "exif",
+    "metadata",
+    "privacy",
+    "strip"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/ICXCNIKAanon/metastrip",
     "directory": "packages/hooks"
+  },
+  "dependencies": {
+    "jszip": "^3.10.1"
   }
 }

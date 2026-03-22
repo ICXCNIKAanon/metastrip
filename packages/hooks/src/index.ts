@@ -1,18 +1,53 @@
 import * as fs from 'fs';
-import { detectFormat } from './detect';
+import * as path from 'path';
+import { detectFormat, type FormatType } from './detect';
 import { validateOutput } from './safety';
 import { stripJpeg } from './strip-jpeg';
 import { stripPng } from './strip-png';
 import { stripWebp } from './strip-webp';
+import { stripGif } from './strip-gif';
+import { stripSvg } from './strip-svg';
+import { stripPdf } from './strip-pdf';
+import { stripOffice } from './strip-office';
+import { stripMp3 } from './strip-mp3';
+import { stripWav } from './strip-wav';
+import { stripFlac } from './strip-flac';
+import { stripMp4 } from './strip-mp4';
+import { stripHeic } from './strip-heic';
+import { stripAvif } from './strip-avif';
+import { stripM4a } from './strip-m4a';
+import { stripAvi } from './strip-avi';
+import { stripMkv } from './strip-mkv';
+import { stripEpub } from './strip-epub';
 import { restageFile } from './git';
 
 export { detectFormat } from './detect';
 export { stripJpeg } from './strip-jpeg';
 export { stripPng } from './strip-png';
 export { stripWebp } from './strip-webp';
-import * as path from 'path';
+export { stripGif } from './strip-gif';
+export { stripSvg } from './strip-svg';
+export { stripPdf } from './strip-pdf';
+export { stripOffice } from './strip-office';
+export { stripMp3 } from './strip-mp3';
+export { stripWav } from './strip-wav';
+export { stripFlac } from './strip-flac';
+export { stripMp4 } from './strip-mp4';
+export { stripHeic } from './strip-heic';
+export { stripAvif } from './strip-avif';
+export { stripM4a } from './strip-m4a';
+export { stripAvi } from './strip-avi';
+export { stripMkv } from './strip-mkv';
+export { stripEpub } from './strip-epub';
 
-const SUPPORTED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
+const SUPPORTED_EXTENSIONS = new Set([
+  '.jpg', '.jpeg', '.png', '.webp',
+  '.gif', '.svg', '.pdf',
+  '.docx', '.xlsx', '.pptx',
+  '.mp3', '.wav', '.flac',
+  '.mp4', '.mov', '.heic', '.avif', '.m4a', '.avi', '.mkv',
+  '.epub',
+]);
 
 export interface StripFileResult {
   filePath: string;
@@ -52,7 +87,8 @@ export async function stripFile(filePath: string): Promise<StripFileResult> {
       return { ...base, skipped: true, error: 'path outside repository root' };
     }
     const input = fs.readFileSync(resolved);
-    const format = detectFormat(input);
+    const fileName = path.basename(resolved);
+    const format = detectFormat(input, fileName);
 
     if (format === null) {
       return { ...base, skipped: true, error: 'unsupported format' };
@@ -61,18 +97,29 @@ export async function stripFile(filePath: string): Promise<StripFileResult> {
     let output: Buffer;
     let categories: string[];
 
-    if (format === 'jpeg') {
-      const result = stripJpeg(input);
-      output = result.output;
-      categories = result.categories;
-    } else if (format === 'png') {
-      const result = stripPng(input);
-      output = result.output;
-      categories = result.categories;
-    } else {
-      const result = stripWebp(input);
-      output = result.output;
-      categories = result.categories;
+    switch (format) {
+      case 'jpeg': { const r = stripJpeg(input); output = r.output; categories = r.categories; break; }
+      case 'png':  { const r = stripPng(input);  output = r.output; categories = r.categories; break; }
+      case 'webp': { const r = stripWebp(input); output = r.output; categories = r.categories; break; }
+      case 'gif':  { const r = stripGif(input);  output = r.output; categories = r.categories; break; }
+      case 'svg':  { const r = stripSvg(input);  output = r.output; categories = r.categories; break; }
+      case 'pdf':  { const r = stripPdf(input);  output = r.output; categories = r.categories; break; }
+      case 'mp3':  { const r = stripMp3(input);  output = r.output; categories = r.categories; break; }
+      case 'wav':  { const r = stripWav(input);  output = r.output; categories = r.categories; break; }
+      case 'flac': { const r = stripFlac(input); output = r.output; categories = r.categories; break; }
+      case 'mp4':
+      case 'mov':  { const r = stripMp4(input);  output = r.output; categories = r.categories; break; }
+      case 'heic': { const r = stripHeic(input); output = r.output; categories = r.categories; break; }
+      case 'avif': { const r = stripAvif(input); output = r.output; categories = r.categories; break; }
+      case 'm4a':  { const r = stripM4a(input);  output = r.output; categories = r.categories; break; }
+      case 'avi':  { const r = stripAvi(input);  output = r.output; categories = r.categories; break; }
+      case 'mkv':  { const r = stripMkv(input);  output = r.output; categories = r.categories; break; }
+      case 'epub': { const r = await stripEpub(input);   output = r.output; categories = r.categories; break; }
+      case 'docx':
+      case 'xlsx':
+      case 'pptx': { const r = await stripOffice(input); output = r.output; categories = r.categories; break; }
+      default:
+        return { ...base, skipped: true, error: 'unsupported format' };
     }
 
     const valid = validateOutput(output, format);
