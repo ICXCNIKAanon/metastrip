@@ -450,32 +450,35 @@ npx metastrip-hooks uninstall`} />
         <div className="flex items-center gap-3 mb-4">
           <h2 className="text-2xl font-bold text-text-primary">REST API</h2>
           <span className="text-xs font-semibold uppercase tracking-wide bg-primary/10 text-primary px-2 py-1 rounded">
-            Coming Soon
+            Live — Free Beta
           </span>
         </div>
         <p className="text-text-secondary mb-4">
-          A hosted REST API is in development for teams that need to integrate metadata stripping
-          into backend pipelines, mobile apps, or workflows where client-side processing is not an option.
+          Strip metadata from any supported file via HTTP. Send a file, get back the cleaned version. Supports all 20 formats.
         </p>
-        <p className="text-text-secondary mb-6">
-          The API will support all formats available in the CLI and npm package, with per-request
-          and monthly volume pricing tiers.
-        </p>
-        <a
-          href="/pricing#waitlist"
-          className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:text-primary/80 transition-colors"
-        >
-          Join the waitlist on the Pricing page
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </a>
+
+        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">POST /api/v1/strip</h3>
+        <p className="text-text-secondary mb-3">Upload a file, receive the cleaned version with metadata removed.</p>
+        <CodeBlock language="bash" code={`curl -X POST https://metastrip.ai/api/v1/strip \\
+  -F file=@photo.jpg \\
+  -o photo.cleaned.jpg`} />
+        <p className="text-text-secondary text-sm mt-2 mb-6">Response headers include <code className="text-primary bg-surface px-1 py-0.5 rounded text-xs font-mono">X-MetaStrip-Original-Size</code>, <code className="text-primary bg-surface px-1 py-0.5 rounded text-xs font-mono">X-MetaStrip-Stripped-Size</code>, and <code className="text-primary bg-surface px-1 py-0.5 rounded text-xs font-mono">X-MetaStrip-Saved</code>.</p>
+
+        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">POST /api/v1/inspect</h3>
+        <p className="text-text-secondary mb-3">Upload a file, receive a JSON report of what metadata was found.</p>
+        <CodeBlock language="bash" code={`curl -X POST https://metastrip.ai/api/v1/inspect \\
+  -F file=@photo.jpg`} />
+        <CodeBlock language="json" code={`{
+  "file": { "name": "photo.jpg", "type": "image/jpeg", "size": 3145728, "format": "jpeg" },
+  "metadata": { "found": true, "bytesRemovable": 12458 },
+  "strippedSize": 3133270
+}`} />
+
+        <div className="bg-surface border border-border rounded-card px-4 py-3 mt-6">
+          <p className="text-sm text-text-secondary">
+            <strong className="text-text-primary">Free beta:</strong> The API is currently free with no authentication required. Rate limits and paid tiers will be introduced in the future. Max file size: 50MB.
+          </p>
+        </div>
       </section>
     </div>
   );

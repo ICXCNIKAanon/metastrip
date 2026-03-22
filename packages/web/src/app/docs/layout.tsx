@@ -8,7 +8,7 @@ export default function DocsLayout({ children }: { children: React.ReactNode }) 
     { label: 'Browser Extension', href: '#browser-extension' },
     { label: 'VS Code Extension', href: '#vscode' },
     { label: 'Git Hooks', href: '#hooks' },
-    { label: 'REST API', href: '#api', comingSoon: true },
+    { label: 'REST API', href: '#api' },
   ];
 
   return (
