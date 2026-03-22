@@ -15,6 +15,13 @@ chrome.runtime.onInstalled.addListener(function(details) {
     title: 'MetaStrip: Inspect Metadata',
     contexts: ['image']
   });
+
+  // Create right-click context menu for page scan
+  chrome.contextMenus.create({
+    id: 'metastrip-scan-page',
+    title: 'MetaStrip: Scan All Images on Page',
+    contexts: ['page']
+  });
 });
 
 // Handle context menu click
@@ -24,6 +31,13 @@ chrome.contextMenus.onClicked.addListener(function(info, tab) {
     chrome.tabs.sendMessage(tab.id, {
       action: 'inspectImage',
       src: info.srcUrl
+    });
+  }
+
+  if (info.menuItemId === 'metastrip-scan-page') {
+    // Send message to content script to scan all images on the page
+    chrome.tabs.sendMessage(tab.id, {
+      action: 'scanPage'
     });
   }
 });
