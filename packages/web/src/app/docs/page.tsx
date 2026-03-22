@@ -371,13 +371,21 @@ export default function DocsPage() {
           them to any website. It also lets you right-click any image on any page to inspect its metadata.
         </p>
 
-        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Install from GitHub</h3>
+        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Chrome — Install from GitHub</h3>
         <ol className="text-text-secondary space-y-2 mb-6 list-decimal list-inside">
           <li>Download or clone the repo: <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">git clone https://github.com/ICXCNIKAanon/metastrip.git</code></li>
           <li>Open Chrome and go to <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">chrome://extensions</code></li>
           <li>Enable <strong className="text-text-primary">Developer mode</strong> (toggle in top-right)</li>
           <li>Click <strong className="text-text-primary">Load unpacked</strong></li>
           <li>Select the <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">packages/browser-extension</code> folder</li>
+        </ol>
+
+        <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Firefox — Install from GitHub</h3>
+        <ol className="text-text-secondary space-y-2 mb-6 list-decimal list-inside">
+          <li>Clone this repo: <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">git clone https://github.com/ICXCNIKAanon/metastrip.git</code></li>
+          <li>Open <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">about:debugging#/runtime/this-firefox</code></li>
+          <li>Click <strong className="text-text-primary">Load Temporary Add-on...</strong></li>
+          <li>Select <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">manifest.json</code> from <code className="text-primary bg-surface px-1.5 py-0.5 rounded text-sm font-mono">packages/firefox-extension</code></li>
         </ol>
 
         <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">Features</h3>

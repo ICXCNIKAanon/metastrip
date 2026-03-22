@@ -52,14 +52,20 @@ Now any AI agent can use these tools:
 - **compare_metadata** — Before/after metadata diff
 - **batch_strip** — Process multiple files at once
 
-### Browser Extension (Chrome)
+### Browser Extension (Chrome + Firefox)
 
 Auto-strips metadata from images before you upload them to any website. Right-click any image to inspect its metadata.
 
-**Install from source:**
+**Chrome — Install from source:**
 1. Clone this repo: `git clone https://github.com/ICXCNIKAanon/metastrip.git`
 2. Open `chrome://extensions` and enable **Developer mode**
 3. Click **Load unpacked** and select `packages/browser-extension`
+
+**Firefox — Install from source:**
+1. Clone this repo: `git clone https://github.com/ICXCNIKAanon/metastrip.git`
+2. Open `about:debugging#/runtime/this-firefox`
+3. Click **Load Temporary Add-on...**
+4. Select `manifest.json` from `packages/firefox-extension`
 
 **Features:**
 - Auto-strip on file upload (any website)

@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "MetaStrip — Auto Metadata Remover",
+  "description": "Automatically strip GPS, device info, and hidden metadata from images before uploading. Right-click any image to inspect its metadata.",
+  "version": "0.3.0",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "metastrip@metastrip.ai",
+      "strict_min_version": "109.0"
+    }
+  },
+  "permissions": ["activeTab", "storage", "contextMenus"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["strip-jpeg.js", "strip-png.js", "strip-webp.js", "inspect.js", "inspect-ui.js", "content.js"],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["intercept.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "background": {
+    "scripts": ["background.js"]
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  }
+}

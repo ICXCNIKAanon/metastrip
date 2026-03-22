@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="icons/icon-48.png" alt="MetaStrip" class="logo">
+      <h1>MetaStrip</h1>
+    </div>
+    <p class="subtitle">Strip metadata from images — inspect any image on the web</p>
+
+    <div class="toggle-row">
+      <span>Protection</span>
+      <label class="switch">
+        <input type="checkbox" id="toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="status" id="status">
+      <span class="dot active"></span>
+      <span>Active — protecting uploads</span>
+    </div>
+
+    <div class="info">
+      <p>Strips GPS, device info, and hidden metadata from JPEG, PNG, and WebP images before they leave your browser.</p>
+    </div>
+
+    <div class="caveat">
+      <p>Works best with standard file uploads. For Gmail, Slack, and Discord, strip files first at <a href="https://metastrip.ai" target="_blank" class="caveat-link">metastrip.ai</a></p>
+    </div>
+
+    <a href="https://metastrip.ai" target="_blank" class="link">metastrip.ai</a>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
