@@ -3,6 +3,9 @@ import JSZip from 'jszip';
 import { categorizeTag, RISK_LEVELS, type MetadataCategory, type RiskLevel } from './categories';
 import { isZip } from './strip-office';
 import { isPdf } from './strip-pdf';
+import { isMp3 } from './strip-mp3';
+import { isWav } from './strip-wav';
+import { isFlac } from './strip-flac';
 
 export interface MetadataEntry {
   key: string;
@@ -362,6 +365,194 @@ function analyzePdfBuffer(buffer: ArrayBuffer, fileName: string): FileAnalysis {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Audio file analysis helpers
+// ---------------------------------------------------------------------------
+
+/** Reads a little-endian uint32 from a Uint8Array at the given offset. */
+function readUint32LE(bytes: Uint8Array, offset: number): number {
+  return (
+    (bytes[offset]! |
+      (bytes[offset + 1]! << 8) |
+      (bytes[offset + 2]! << 16) |
+      (bytes[offset + 3]! << 24)) >>> 0
+  );
+}
+
+/** Reads a big-endian uint32 from a Uint8Array at the given offset. */
+function readUint32BE(bytes: Uint8Array, offset: number): number {
+  return (
+    ((bytes[offset]! << 24) |
+      (bytes[offset + 1]! << 16) |
+      (bytes[offset + 2]! << 8) |
+      bytes[offset + 3]!) >>> 0
+  );
+}
+
+function buildAudioAnalysis(
+  fileName: string,
+  fileSize: number,
+  entries: MetadataEntry[],
+): FileAnalysis {
+  const riskScore = computeRiskScore(entries);
+  const riskLevel = scoreToLevel(riskScore);
+  const byCategory: Record<MetadataCategory, MetadataEntry[]> = {} as Record<MetadataCategory, MetadataEntry[]>;
+  for (const cat of ALL_CATEGORIES) byCategory[cat] = [];
+  for (const entry of entries) byCategory[entry.category].push(entry);
+  return { fileName, fileSize, entries, gps: null, riskScore, riskLevel, isAI: false, byCategory };
+}
+
+function analyzeMp3Buffer(buffer: ArrayBuffer, fileName: string): FileAnalysis {
+  const bytes = new Uint8Array(buffer);
+  const entries: MetadataEntry[] = [];
+
+  // Detect ID3v2 at start
+  if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) {
+    const majorVersion = bytes[3]!;
+    const minorVersion = bytes[4]!;
+    const size =
+      ((bytes[6]! & 0x7F) << 21) |
+      ((bytes[7]! & 0x7F) << 14) |
+      ((bytes[8]! & 0x7F) << 7) |
+       (bytes[9]! & 0x7F);
+
+    entries.push(makeEntry('ID3v2Tag', `ID3 v2.${majorVersion}.${minorVersion} (${size + 10} bytes)`));
+  }
+
+  // Detect ID3v1 at end
+  if (bytes.length >= 128) {
+    const tagOffset = bytes.length - 128;
+    if (bytes[tagOffset] === 0x54 && bytes[tagOffset + 1] === 0x41 && bytes[tagOffset + 2] === 0x47) {
+      // Decode title (30 bytes at offset 3), artist (30 bytes at offset 33)
+      const decode = (start: number, len: number) => {
+        let str = '';
+        for (let i = 0; i < len; i++) {
+          const ch = bytes[tagOffset + start + i]!;
+          if (ch === 0) break;
+          str += String.fromCharCode(ch);
+        }
+        return str.trim();
+      };
+      entries.push(makeEntry('ID3v1Tag', '128 bytes at end of file'));
+      const title = decode(3, 30);
+      const artist = decode(33, 30);
+      const album = decode(63, 30);
+      const year = decode(93, 4);
+      if (title) entries.push(makeEntry('Title', title));
+      if (artist) entries.push(makeEntry('Artist', artist));
+      if (album) entries.push(makeEntry('Album', album));
+      if (year) entries.push(makeEntry('Year', year));
+    }
+  }
+
+  return buildAudioAnalysis(fileName, buffer.byteLength, entries);
+}
+
+function analyzeWavBuffer(buffer: ArrayBuffer, fileName: string): FileAnalysis {
+  const bytes = new Uint8Array(buffer);
+  const entries: MetadataEntry[] = [];
+
+  // Parse RIFF chunks looking for LIST/INFO and bext
+  let offset = 12; // skip RIFF header
+  while (offset + 8 <= bytes.length) {
+    const fourcc = String.fromCharCode(bytes[offset]!, bytes[offset + 1]!, bytes[offset + 2]!, bytes[offset + 3]!);
+    const chunkSize = readUint32LE(bytes, offset + 4);
+    const paddedSize = chunkSize + (chunkSize & 1);
+
+    if (fourcc === 'LIST' && offset + 12 <= bytes.length) {
+      const listType = String.fromCharCode(bytes[offset + 8]!, bytes[offset + 9]!, bytes[offset + 10]!, bytes[offset + 11]!);
+      if (listType === 'INFO') {
+        entries.push(makeEntry('LIST_INFO', `${chunkSize} bytes — text metadata chunk`));
+        // Parse sub-chunks
+        let subOffset = offset + 12;
+        const listEnd = offset + 8 + paddedSize;
+        while (subOffset + 8 <= listEnd && subOffset + 8 <= bytes.length) {
+          const subFourcc = String.fromCharCode(bytes[subOffset]!, bytes[subOffset + 1]!, bytes[subOffset + 2]!, bytes[subOffset + 3]!);
+          const subSize = readUint32LE(bytes, subOffset + 4);
+          if (subSize > 0 && subOffset + 8 + subSize <= bytes.length) {
+            let val = '';
+            for (let i = 0; i < subSize; i++) {
+              const ch = bytes[subOffset + 8 + i]!;
+              if (ch === 0) break;
+              val += String.fromCharCode(ch);
+            }
+            val = val.trim();
+            if (val) {
+              const keyMap: Record<string, string> = {
+                INAM: 'Title', IART: 'Artist', IPRD: 'Album',
+                ICRD: 'Date', ICMT: 'Comment', ISFT: 'Software',
+                IGNR: 'Genre', ITRK: 'Track',
+              };
+              entries.push(makeEntry(keyMap[subFourcc] ?? subFourcc, val));
+            }
+          }
+          subOffset += 8 + subSize + (subSize & 1);
+        }
+      }
+    } else if (fourcc === 'bext') {
+      entries.push(makeEntry('BroadcastWaveExtension', `${chunkSize} bytes — broadcast metadata`));
+    } else if (fourcc === 'id3 ') {
+      entries.push(makeEntry('EmbeddedID3', `${chunkSize} bytes — embedded ID3 tag`));
+    }
+
+    offset += 8 + paddedSize;
+    if (offset <= 8) break; // overflow guard
+  }
+
+  return buildAudioAnalysis(fileName, buffer.byteLength, entries);
+}
+
+function analyzeFlacBuffer(buffer: ArrayBuffer, fileName: string): FileAnalysis {
+  const bytes = new Uint8Array(buffer);
+  const entries: MetadataEntry[] = [];
+
+  let offset = 4; // skip "fLaC" magic
+  while (offset + 4 <= bytes.length) {
+    const headerByte = bytes[offset]!;
+    const isLast = (headerByte & 0x80) !== 0;
+    const blockType = headerByte & 0x7F;
+    const blockLen = (bytes[offset + 1]! << 16) | (bytes[offset + 2]! << 8) | bytes[offset + 3]!;
+    const dataStart = offset + 4;
+
+    if (blockType === 4 && dataStart + 4 <= bytes.length) {
+      // VORBIS_COMMENT
+      const vendorLen = readUint32LE(bytes, dataStart);
+      const vendorEnd = dataStart + 4 + vendorLen;
+      if (vendorLen > 0 && vendorEnd <= bytes.length) {
+        const vendor = new TextDecoder().decode(bytes.slice(dataStart + 4, vendorEnd));
+        if (vendor.trim()) entries.push(makeEntry('VorbisVendor', vendor));
+      }
+
+      if (vendorEnd + 4 <= bytes.length) {
+        const commentCount = readUint32LE(bytes, vendorEnd);
+        let pos = vendorEnd + 4;
+        for (let i = 0; i < commentCount && pos + 4 <= bytes.length; i++) {
+          const commentLen = readUint32LE(bytes, pos);
+          pos += 4;
+          if (commentLen > 0 && pos + commentLen <= bytes.length) {
+            const comment = new TextDecoder().decode(bytes.slice(pos, pos + commentLen));
+            const eqIdx = comment.indexOf('=');
+            if (eqIdx !== -1) {
+              const key = comment.slice(0, eqIdx).trim();
+              const val = comment.slice(eqIdx + 1).trim();
+              if (key && val) entries.push(makeEntry(key, val));
+            }
+          }
+          pos += commentLen;
+        }
+      }
+    } else if (blockType === 6) {
+      // PICTURE
+      entries.push(makeEntry('EmbeddedPicture', `${blockLen} bytes — cover art`));
+    }
+
+    if (isLast) break;
+    offset += 4 + blockLen;
+  }
+
+  return buildAudioAnalysis(fileName, buffer.byteLength, entries);
+}
+
 export async function analyzeFile(file: File): Promise<FileAnalysis> {
   const buffer = await file.arrayBuffer();
 
@@ -369,6 +560,11 @@ export async function analyzeFile(file: File): Promise<FileAnalysis> {
   if (isPdf(buffer)) {
     return analyzePdfBuffer(buffer, file.name);
   }
+
+  // Audio files
+  if (isMp3(buffer)) return analyzeMp3Buffer(buffer, file.name);
+  if (isWav(buffer)) return analyzeWavBuffer(buffer, file.name);
+  if (isFlac(buffer)) return analyzeFlacBuffer(buffer, file.name);
 
   // Office documents (DOCX, XLSX, PPTX) are ZIP archives
   const lower = file.name.toLowerCase();

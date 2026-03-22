@@ -13,10 +13,17 @@ const ACCEPTED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // Audio formats
+  'audio/mpeg',
+  'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
+  'audio/flac',
+  'audio/x-flac',
 ];
 // Some browsers report Office files with application/zip or application/octet-stream,
-// so we accept by extension as a fallback.
-const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf'];
+// and audio files with application/octet-stream, so we accept by extension as a fallback.
+const ACCEPTED_EXTENSIONS = ['.docx', '.xlsx', '.pptx', '.pdf', '.mp3', '.wav', '.flac'];
 const ACCEPTED_ATTR = [...ACCEPTED_TYPES, ...ACCEPTED_EXTENSIONS].join(',');
 
 interface DropZoneProps {
@@ -41,7 +48,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
         const lower = file.name.toLowerCase();
         const hasAcceptedExt = ACCEPTED_EXTENSIONS.some((ext) => lower.endsWith(ext));
         if (!ACCEPTED_TYPES.includes(file.type) && !hasAcceptedExt) {
-          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, or PPTX files.`);
+          setError(`Unsupported file type "${file.type}" on "${file.name}". Please upload JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, or FLAC files.`);
           return;
         }
         if (file.size > MAX_FILE_SIZE) {
@@ -180,7 +187,7 @@ export default function DropZone({ onFilesSelected }: DropZoneProps) {
             </p>
             {!isDragging && !isProcessing && (
               <p className="text-sm text-text-secondary">
-                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX
+                JPEG · PNG · WebP · GIF · SVG · PDF · DOCX · XLSX · PPTX · MP3 · WAV · FLAC
               </p>
             )}
           </div>

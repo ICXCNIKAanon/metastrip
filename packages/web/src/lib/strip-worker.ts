@@ -25,7 +25,10 @@ function injectByFormat(
     case 'docx':
     case 'xlsx':
     case 'pptx':
-      // Office, PDF, and binary formats do not support fake metadata injection — return as-is.
+    case 'mp3':
+    case 'wav':
+    case 'flac':
+      // Office, PDF, audio, and binary formats do not support fake metadata injection — return as-is.
       return buffer;
   }
 }

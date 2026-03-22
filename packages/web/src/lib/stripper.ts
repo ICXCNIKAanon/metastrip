@@ -5,8 +5,11 @@ import { isGif, stripGif } from './strip-gif';
 import { isSvg, stripSvg } from './strip-svg';
 import { isZip, stripOffice } from './strip-office';
 import { isPdf, stripPdf } from './strip-pdf';
+import { isMp3, stripMp3 } from './strip-mp3';
+import { isWav, stripWav } from './strip-wav';
+import { isFlac, stripFlac } from './strip-flac';
 
-export type SupportedFormat = 'jpeg' | 'png' | 'webp' | 'gif' | 'svg' | 'docx' | 'xlsx' | 'pptx' | 'pdf';
+export type SupportedFormat = 'jpeg' | 'png' | 'webp' | 'gif' | 'svg' | 'docx' | 'xlsx' | 'pptx' | 'pdf' | 'mp3' | 'wav' | 'flac';
 
 export interface StripResult {
   buffer: ArrayBuffer;
@@ -22,6 +25,9 @@ export function detectFormat(buffer: ArrayBuffer, fileName?: string): SupportedF
   if (isGif(buffer)) return 'gif';
   if (isSvg(buffer)) return 'svg';
   if (isPdf(buffer)) return 'pdf';
+  if (isMp3(buffer)) return 'mp3';
+  if (isWav(buffer)) return 'wav';
+  if (isFlac(buffer)) return 'flac';
   if (isZip(buffer) && fileName) {
     const lower = fileName.toLowerCase();
     if (lower.endsWith('.docx')) return 'docx';
@@ -45,6 +51,9 @@ export async function stripMetadata(buffer: ArrayBuffer, fileName?: string): Pro
     case 'gif': stripped = stripGif(buffer); break;
     case 'svg': stripped = stripSvg(buffer); break;
     case 'pdf': stripped = stripPdf(buffer); break;
+    case 'mp3': stripped = stripMp3(buffer); break;
+    case 'wav': stripped = stripWav(buffer); break;
+    case 'flac': stripped = stripFlac(buffer); break;
     case 'docx':
     case 'xlsx':
     case 'pptx':
