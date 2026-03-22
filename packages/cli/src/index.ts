@@ -22,9 +22,124 @@ import ora from 'ora';
 import Table from 'cli-table3';
 import * as path from 'path';
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
+import * as os from 'os';
 import { glob } from 'glob';
 import { MetaStrip } from '@metastrip/core';
 import type { InspectionResult, MetadataCategory, StripResult } from '@metastrip/core';
+
+// ============================================================
+// .metastriprc Config File
+// ============================================================
+
+function loadConfig(): Record<string, unknown> {
+  const paths = [
+    path.join(process.cwd(), '.metastriprc'),
+    path.join(os.homedir(), '.metastriprc'),
+  ];
+
+  for (const p of paths) {
+    try {
+      const content = fsSync.readFileSync(p, 'utf-8');
+      return JSON.parse(content);
+    } catch {
+      // File doesn't exist or invalid JSON — skip
+    }
+  }
+  return {};
+}
+
+const config = loadConfig();
+
+// ============================================================
+// Shell Completion Scripts
+// ============================================================
+
+function generateBashCompletions(): string {
+  return `_metastrip_completions() {
+  local cur="\${COMP_WORDS[COMP_CWORD]}"
+  local commands="inspect clean diff formats completions"
+
+  if [ $COMP_CWORD -eq 1 ]; then
+    COMPREPLY=(\$(compgen -W "$commands" -- "$cur"))
+  else
+    case "\${COMP_WORDS[1]}" in
+      inspect)
+        COMPREPLY=(\$(compgen -W "--format -f" -- "$cur"))
+        ;;
+      clean)
+        COMPREPLY=(\$(compgen -W "--output -o --keep -k --categories -c --quality -q --no-color-profile --json" -- "$cur"))
+        ;;
+      diff)
+        COMPREPLY=(\$(compgen -W "--keep -k" -- "$cur"))
+        ;;
+      completions)
+        COMPREPLY=(\$(compgen -W "bash zsh fish" -- "$cur"))
+        ;;
+    esac
+    # Fall back to file completion
+    COMPREPLY+=(\$(compgen -f -- "$cur"))
+  fi
+}
+complete -F _metastrip_completions metastrip`;
+}
+
+function generateZshCompletions(): string {
+  return `#compdef metastrip
+
+_metastrip() {
+  local -a commands
+  commands=(
+    'inspect:Show all metadata in a file with privacy risk assessment'
+    'clean:Strip metadata from one or more files'
+    'diff:Preview what metadata would be removed'
+    'formats:List all supported file formats'
+    'completions:Generate shell completion script'
+  )
+
+  _arguments -C \\
+    '1:command:->command' \\
+    '*::arg:->args'
+
+  case $state in
+    command)
+      _describe 'command' commands
+      ;;
+    args)
+      case \${words[1]} in
+        inspect)
+          _arguments '--format[Output format]:format:(table json summary)' '*:file:_files'
+          ;;
+        clean)
+          _arguments '--output[Output path]:path:_files' '--keep[Categories to keep]:category:' '--quality[Output quality]:quality:' '--json[Output as JSON]' '*:file:_files'
+          ;;
+        diff)
+          _arguments '--keep[Categories to keep]:category:' '*:file:_files'
+          ;;
+        completions)
+          _arguments '1:shell:(bash zsh fish)'
+          ;;
+      esac
+      ;;
+  esac
+}
+
+_metastrip`;
+}
+
+function generateFishCompletions(): string {
+  return `complete -c metastrip -n '__fish_use_subcommand' -a 'inspect' -d 'Show metadata in a file'
+complete -c metastrip -n '__fish_use_subcommand' -a 'clean' -d 'Strip metadata from files'
+complete -c metastrip -n '__fish_use_subcommand' -a 'diff' -d 'Preview metadata removal'
+complete -c metastrip -n '__fish_use_subcommand' -a 'formats' -d 'List supported formats'
+complete -c metastrip -n '__fish_use_subcommand' -a 'completions' -d 'Generate completions'
+complete -c metastrip -n '__fish_seen_subcommand_from inspect' -l format -a 'table json summary'
+complete -c metastrip -n '__fish_seen_subcommand_from clean' -l output -r
+complete -c metastrip -n '__fish_seen_subcommand_from clean' -l keep
+complete -c metastrip -n '__fish_seen_subcommand_from clean' -l quality
+complete -c metastrip -n '__fish_seen_subcommand_from clean' -l json
+complete -c metastrip -n '__fish_seen_subcommand_from completions' -a 'bash zsh fish'`;
+}
 
 const ms = new MetaStrip();
 const program = new Command();
@@ -211,21 +326,24 @@ program
       process.exit(1);
     }
 
+    // Resolve output from CLI flag or config file default
+    const effectiveOutput = opts.output ?? (typeof config.outputDir === 'string' ? config.outputDir : undefined);
+
     // Determine if output is a directory
     let outputDir: string | undefined;
     let outputPath: string | undefined;
-    if (opts.output) {
+    if (effectiveOutput) {
       try {
-        const stat = await fs.stat(opts.output);
-        if (stat.isDirectory()) outputDir = opts.output;
-        else outputPath = opts.output;
+        const stat = await fs.stat(effectiveOutput);
+        if (stat.isDirectory()) outputDir = effectiveOutput;
+        else outputPath = effectiveOutput;
       } catch {
         // Doesn't exist yet — if multiple files, treat as dir; else treat as file
         if (resolvedFiles.length > 1) {
-          outputDir = opts.output;
+          outputDir = effectiveOutput;
           await fs.mkdir(outputDir, { recursive: true });
         } else {
-          outputPath = opts.output;
+          outputPath = effectiveOutput;
         }
       }
     }
@@ -235,11 +353,20 @@ program
     for (const filePath of resolvedFiles) {
       const spinner = ora(`Cleaning ${path.basename(filePath)}...`).start();
 
+      // Apply config file defaults where CLI flags were not explicitly set
+      const effectiveKeep = opts.keep ?? (config.keep as string[] | undefined);
+      const effectiveQuality = opts.quality !== '95'
+        ? parseInt(opts.quality)
+        : typeof config.quality === 'number' ? config.quality : parseInt(opts.quality);
+      const effectiveColorProfile = !opts.colorProfile && config.preserveColorProfile === false
+        ? false
+        : opts.colorProfile;
+
       const stripOpts = {
-        keep: opts.keep as MetadataCategory[] | undefined,
+        keep: effectiveKeep as MetadataCategory[] | undefined,
         categories: opts.categories as MetadataCategory[] | undefined,
-        quality: parseInt(opts.quality),
-        preserveColorProfile: opts.colorProfile,
+        quality: effectiveQuality,
+        preserveColorProfile: effectiveColorProfile,
         outputPath: outputDir
           ? path.join(outputDir, `${path.basename(filePath, path.extname(filePath))}.cleaned${path.extname(filePath)}`)
           : outputPath,
@@ -286,7 +413,8 @@ program
       const inspection = await ms.inspect(filePath);
       spinner.stop();
 
-      const keepSet = new Set(opts.keep ?? []);
+      const effectiveKeep = opts.keep ?? (config.keep as string[] | undefined);
+      const keepSet = new Set(effectiveKeep ?? []);
       const wouldRemove = inspection.entries.filter(e => !keepSet.has(e.category));
       const wouldKeep = inspection.entries.filter(e => keepSet.has(e.category));
 
@@ -333,6 +461,27 @@ program
     console.log(chalk.gray('  Audio:   ') + chalk.gray('.mp3 .flac .wav .ogg .aac (coming soon)'));
     console.log(chalk.gray('  Docs:    ') + chalk.gray('.pdf .docx .xlsx .pptx (coming soon)'));
     console.log();
+  });
+
+// COMPLETIONS
+program
+  .command('completions <shell>')
+  .description('Generate shell completion script (bash, zsh, fish)')
+  .action((shell: string) => {
+    switch (shell) {
+      case 'bash':
+        console.log(generateBashCompletions());
+        break;
+      case 'zsh':
+        console.log(generateZshCompletions());
+        break;
+      case 'fish':
+        console.log(generateFishCompletions());
+        break;
+      default:
+        console.error(`Unsupported shell: ${shell}. Use bash, zsh, or fish.`);
+        process.exit(1);
+    }
   });
 
 program.parse();
