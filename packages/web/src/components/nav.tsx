@@ -27,7 +27,7 @@ export default function Nav() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
             <Image src="/icon.svg" alt="MetaStrip" width={32} height={32} className="w-8 h-8" />
-            <span className="text-text-primary font-bold text-lg font-sans">MetaStrip</span>
+            <span className="text-text-primary font-bold text-lg font-sans">MetaStrip.ai</span>
           </Link>
 
           {/* Desktop nav links */}
