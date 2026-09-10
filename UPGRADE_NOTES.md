@@ -39,6 +39,7 @@ The source baseline was `86f6f0e`, matching the previous production landing page
 - Production HTTP checks repeat these results on `https://metastrip.ai`; sitemap, robots, and both LLM text resources return 200. The new landing copy and sample button are present in server-rendered HTML.
 - Production Chrome QA repeats sample inspection -> cleaning -> reinspection: 515 -> 267 bytes and risk 15 -> 0; decoy injection returns risk 60 and 12 detected fields. Browser error logs are empty.
 - GitHub Actions for implementation commit `7aaaa4a` passed on Node 20 and 22, and the production deployment workflow completed successfully. The separate publish job reports success but does not prove npm publication because its commands mask errors.
+- Follow-up mobile Lighthouse 13.4.1 audit: accessibility 100, best practices 100, SEO 100, and agentic browsing 100; zero failed scored audits. Its separate unthrottled load trace measured LCP 120 ms, TTFB 73 ms, and CLS 0. No CrUX field dataset was available and no INP was measured; these are lab results, not a real-user performance guarantee. Render-blocking insight estimated 0 ms savings, so no further loading changes were justified.
 
 The browser automation extension could not upload local fixture paths without its separate file-URL permission. The built-in synthetic sample was used for the full browser flow; real binary fixtures were covered by automated regression tests.
 
@@ -71,12 +72,14 @@ Read-only checks on September 10, 2026 found:
 | npm `@metastrip/core` | 0.1.0, published March 20 | Publish a new version for the updated dependencies and Node requirement. |
 | npm `@metastrip/cli` | 0.1.0, published March 20 | No CLI source change in this upgrade; its `@metastrip/core: *` dependency can pick up a later core release. Verify the released CLI against that version. |
 | npm `@metastrip/mcp-server` | 0.1.0, published March 20 | No MCP source change in this upgrade; its `@metastrip/core: *` dependency can pick up a later core release. Verify the released server against that version. |
-| npm `@metastrip/hooks` | 0.2.0, published March 22 | Publish a new version containing the file-format fixes. The current CI publish job does not publish hooks. |
+| npm `@metastrip/hooks` | 0.2.0, published March 22 | Publish a new version containing the file-format fixes. The new manual release workflow includes hooks. |
 | Chrome extension | Manifest 0.3.0 | Increment version and distribute updated extension source. The repository documents load-unpacked installation; no store listing or publishing workflow is configured. |
 | Firefox extension | Manifest 0.3.0 | Increment version and distribute/sign the update. The repository documents temporary installation; no add-on store publishing workflow is configured. |
 | GitHub release | v0.3.0, March 22; zero attached assets | Create a new release and built distribution assets if this is the chosen channel. |
 
-Local `npm whoami` returns `ENEEDAUTH`. Repository secret names are `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and `VERCEL_TOKEN`; there is no `NPM_TOKEN`. The existing CI job references `NPM_TOKEN`, attempts core/CLI/MCP publication, and masks failures with `|| true`. Successful CI must therefore not be treated as proof of npm publication. Publishing requires an authorized npm login/token or a configured trusted-publisher workflow with access to the `@metastrip` scope. Store publication separately requires the appropriate Chrome Web Store/Mozilla publisher account and listing access; neither was verified or requested through this release. No packages or extensions were installed into the user's desktop applications.
+Local `npm whoami` returns `ENEEDAUTH`. Repository secret names are `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and `VERCEL_TOKEN`; there is no `NPM_TOKEN`. The prior CI publisher masked errors with `|| true`, so its successful result is not evidence of package publication. The follow-up replaces it with an explicit manual, dry-run-by-default `publish.yml`: all four packages including hooks, complete registry preflight, package review, existing-version skips, and visible errors. Repository URLs now match the canonical GitHub repository for provenance. Five release-safety tests pass; all four distributable packages build and their real registry/package dry run succeeds without publication. See [RELEASING.md](RELEASING.md) for publisher configuration and version/release steps.
+
+Publishing still requires an authorized npm login/token or configured trusted publisher with access to the `@metastrip` scope. Store publication separately requires the appropriate Chrome Web Store/Mozilla publisher account and listing access; neither was verified or requested through this release. No packages or extensions were installed into the user's desktop applications.
 
 ## Primary references
 

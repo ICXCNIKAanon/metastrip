@@ -28,7 +28,7 @@
   "keywords": ["metastrip", "exif", "metadata", "privacy", "cli"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/metastrip/metastrip",
+    "url": "https://github.com/ICXCNIKAanon/metastrip",
     "directory": "packages/cli"
   }
 }

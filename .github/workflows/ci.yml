@@ -40,38 +40,5 @@ jobs:
       - name: Run tests
         run: npm test
 
-  publish:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    permissions:
-      contents: read
-      id-token: write
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          registry-url: 'https://registry.npmjs.org'
-          cache: 'npm'
-
-      - run: npm ci
-      - run: npm run build
-
-      # Only publish if version changed (use changesets or manual)
-      - name: Publish @metastrip/core
-        run: cd packages/core && npm publish --provenance --access public || true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @metastrip/cli
-        run: cd packages/cli && npm publish --provenance --access public || true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @metastrip/mcp-server
-        run: cd packages/mcp-server && npm publish --provenance --access public || true
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Test package release safety
+        run: node --test scripts/publish-packages.test.mjs
