@@ -38,6 +38,7 @@ The source baseline was `86f6f0e`, matching the previous production landing page
 - Local HTTP checks: home/docs/pricing/compare/blog/privacy/terms return 200, each has one matching canonical and one H1; JSON-LD parses successfully. Home first-load JS is 117 kB in this build.
 - Production HTTP checks repeat these results on `https://metastrip.ai`; sitemap, robots, and both LLM text resources return 200. The new landing copy and sample button are present in server-rendered HTML.
 - Production Chrome QA repeats sample inspection -> cleaning -> reinspection: 515 -> 267 bytes and risk 15 -> 0; decoy injection returns risk 60 and 12 detected fields. Browser error logs are empty.
+- GitHub Actions for implementation commit `7aaaa4a` passed on Node 20 and 22, and the production deployment workflow completed successfully. The separate publish job reports success but does not prove npm publication because its commands mask errors.
 
 The browser automation extension could not upload local fixture paths without its separate file-URL permission. The built-in synthetic sample was used for the full browser flow; real binary fixtures were covered by automated regression tests.
 
@@ -59,6 +60,7 @@ The browser automation extension could not upload local fixture paths without it
 - Existing `vercel.json`: install `npm install --legacy-peer-deps`; build `cd packages/web && npm run build`; output `packages/web/.next`.
 - Local preview: `npm run start -w packages/web -- --hostname 127.0.0.1 --port 3212` after building.
 - Verified production deployment: `dpl_2BykvZVUnzmaXHkv5UJppQ93N5rh`, [deployment URL](https://metastrip-5sy8huwhf-34567893.vercel.app), aliased to `https://metastrip.ai` with state `READY`.
+- The existing GitHub workflow also deployed the same implementation commit. Its later ready deployment `dpl_5i3QfhLhw1c7N3XQmQ5ihK2UzCyU`, [deployment URL](https://metastrip-ri9w9hk7h-34567893.vercel.app), is now the production alias target. [Deployment workflow](https://github.com/ICXCNIKAanon/metastrip/actions/runs/34517788797); [CI results](https://github.com/ICXCNIKAanon/metastrip/actions/runs/34517788972).
 
 ## Package and extension distribution audit
 
