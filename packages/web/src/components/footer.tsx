@@ -32,7 +32,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  href="/docs#mcp"
+                  href="/docs#mcp-server"
                   className="text-text-secondary hover:text-text-primary text-sm transition-colors duration-150"
                 >
                   MCP Server

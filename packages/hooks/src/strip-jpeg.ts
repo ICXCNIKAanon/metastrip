@@ -1,3 +1,4 @@
+import { jpegOrientationSegment } from './jpeg-orientation';
 /**
  * JPEG binary metadata stripper (Node.js port).
  *
@@ -90,6 +91,7 @@ export function stripJpeg(input: Buffer): StripJpegResult {
   // SOI is always kept (bytes 0-1).
   chunks.push([0, 2]);
 
+  let orientation: Uint8Array<ArrayBuffer> | null = null;
   let offset = 2; // Start parsing after SOI
 
   while (offset < len) {
@@ -154,11 +156,17 @@ export function stripJpeg(input: Buffer): StripJpegResult {
     const blockEnd = segmentEnd;
 
     // Advance past the segment.
+    if (marker === MARKER_APP1 && !orientation) {
+      orientation = jpegOrientationSegment(src, blockStart + 4, segmentEnd);
+    }
     offset = segmentEnd;
 
     // --- SOS: copy everything from here (including scan data) verbatim ---
     if (marker === MARKER_SOS) {
-      chunks.push([blockStart, len]);
+      let imageEnd = segmentEnd;
+      while (imageEnd + 1 < len && !(src[imageEnd] === 0xff && src[imageEnd + 1] === 0xd9)) imageEnd++;
+      if (imageEnd + 1 >= len) throw new Error('Truncated JPEG: missing end-of-image marker');
+      chunks.push([blockStart, imageEnd + 2]);
       break;
     }
 
@@ -182,12 +190,16 @@ export function stripJpeg(input: Buffer): StripJpegResult {
   }
 
   // Assemble output buffer.
-  const totalSize = chunks.reduce((acc, [s, e]) => acc + (e - s), 0);
+  const totalSize = chunks.reduce((acc, [s, e]) => acc + (e - s), 0) + (orientation?.length ?? 0);
   const out = new Uint8Array(totalSize);
   let outOffset = 0;
   for (const [start, end] of chunks) {
     out.set(src.subarray(start, end), outOffset);
     outOffset += end - start;
+    if (start === 0 && end === 2 && orientation) {
+      out.set(orientation, outOffset);
+      outOffset += orientation.length;
+    }
   }
 
   return { output: Buffer.from(out.buffer, out.byteOffset, out.byteLength), categories };

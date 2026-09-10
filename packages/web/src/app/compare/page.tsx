@@ -11,7 +11,6 @@ import type { FileAnalysis } from '@/lib/metadata';
 
 interface SlotState {
   file: File;
-  buffer: ArrayBuffer;
   analysis: FileAnalysis;
 }
 
@@ -31,6 +30,7 @@ const FINGERPRINT_KEYS = [
   'Make',
   'Model',
   'BodySerialNumber',
+  'CameraSerialNumber',
   'LensSerialNumber',
   'LensModel',
   'Software',
@@ -38,7 +38,7 @@ const FINGERPRINT_KEYS = [
   'ImageUniqueID',
 ];
 
-const SERIAL_KEYS = ['BodySerialNumber', 'LensSerialNumber', 'ImageUniqueID'];
+const SERIAL_KEYS = ['BodySerialNumber', 'CameraSerialNumber', 'LensSerialNumber'];
 
 // ---------------------------------------------------------------------------
 // Comparison logic
@@ -139,7 +139,7 @@ function MiniDrop({ label, slot, loading, onFile }: MiniDropProps) {
       aria-label={`Drop zone for ${label}`}
       onClick={() => inputRef.current?.click()}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); }
       }}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -149,6 +149,7 @@ function MiniDrop({ label, slot, loading, onFile }: MiniDropProps) {
       <input
         ref={inputRef}
         type="file"
+        accept=".jpg,.jpeg,.png,.webp"
         className="hidden"
         onChange={handleInput}
         aria-hidden="true"
@@ -228,8 +229,8 @@ function VerdictCard({ result }: { result: ComparisonResult }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 3a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      label: 'SAME DEVICE',
-      desc: 'Serial number(s) match — these files were almost certainly captured by the same physical device.',
+      label: 'MATCHING SERIAL METADATA',
+      desc: 'A device or lens serial field matches. This is a metadata match, not proof of a shared physical device; fields can be copied or edited.',
     },
     POSSIBLY_SAME: {
       border: 'border-yellow-500/60',
@@ -241,8 +242,8 @@ function VerdictCard({ result }: { result: ComparisonResult }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
         </svg>
       ),
-      label: 'POSSIBLY SAME DEVICE',
-      desc: 'Make and model match but no serial numbers were found. Could be the same device or the same camera model.',
+      label: 'MATCHING CAMERA MODEL',
+      desc: 'Make and model match, but no matching serial field was found. Many devices share the same model.',
     },
     DIFFERENT: {
       border: 'border-emerald-500/60',
@@ -254,8 +255,8 @@ function VerdictCard({ result }: { result: ComparisonResult }) {
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      label: 'DIFFERENT DEVICES',
-      desc: 'No matching device fingerprints found. These files appear to come from different devices.',
+      label: 'NO SHARED DEVICE EVIDENCE',
+      desc: 'No matching device identifiers were detected. Missing or stripped metadata cannot establish whether files came from different devices.',
     },
   }[result.verdict];
 
@@ -309,7 +310,7 @@ function MetadataTable({ slotA, slotB, matchedKeys }: {
   return (
     <div className="border border-border rounded-card overflow-hidden">
       {/* Header */}
-      <div className="grid grid-cols-[180px_1fr_1fr] bg-surface border-b border-border text-xs font-semibold text-text-tertiary uppercase tracking-wider">
+      <div className="grid grid-cols-[100px_minmax(0,1fr)_minmax(0,1fr)] sm:grid-cols-[180px_minmax(0,1fr)_minmax(0,1fr)] bg-surface border-b border-border text-xs font-semibold text-text-tertiary uppercase tracking-wider">
         <div className="px-4 py-3">Field</div>
         <div className="px-4 py-3 border-l border-border truncate">{slotA.file.name}</div>
         <div className="px-4 py-3 border-l border-border truncate">{slotB.file.name}</div>
@@ -326,7 +327,7 @@ function MetadataTable({ slotA, slotB, matchedKeys }: {
           return (
             <div
               key={key}
-              className={`grid grid-cols-[180px_1fr_1fr] text-xs min-h-[36px] ${rowBg}`}
+              className={`grid grid-cols-[100px_minmax(0,1fr)_minmax(0,1fr)] sm:grid-cols-[180px_minmax(0,1fr)_minmax(0,1fr)] text-xs min-h-[36px] ${rowBg}`}
             >
               <div className={`px-4 py-2.5 font-medium flex items-center gap-1.5 ${isMatch ? 'text-primary' : 'text-text-secondary'}`}>
                 {isMatch && (
@@ -363,30 +364,33 @@ function MetadataTable({ slotA, slotB, matchedKeys }: {
 export default function ComparePage() {
   const [slotA, setSlotA] = useState<SlotState | null>(null);
   const [slotB, setSlotB] = useState<SlotState | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loadingA, setLoadingA] = useState(false);
   const [loadingB, setLoadingB] = useState(false);
 
   const handleFileA = useCallback(async (file: File) => {
+    setError(null);
+    if (!/\.(jpe?g|png|webp)$/i.test(file.name) || file.size > 25 * 1024 * 1024 || file.size === 0) { setError('Choose a nonempty JPEG, PNG or WebP up to 25 MB for comparison.'); return; }
     setLoadingA(true);
     try {
-      const buffer = await file.arrayBuffer();
       const analysis = await analyzeFile(file);
-      setSlotA({ file, buffer, analysis });
+      setSlotA({ file, analysis });
     } catch (err) {
-      console.error('Failed to analyze file A:', err);
+      setSlotA(null); setError(err instanceof Error ? err.message : 'Could not inspect file A.');
     } finally {
       setLoadingA(false);
     }
   }, []);
 
   const handleFileB = useCallback(async (file: File) => {
+    setError(null);
+    if (!/\.(jpe?g|png|webp)$/i.test(file.name) || file.size > 25 * 1024 * 1024 || file.size === 0) { setError('Choose a nonempty JPEG, PNG or WebP up to 25 MB for comparison.'); return; }
     setLoadingB(true);
     try {
-      const buffer = await file.arrayBuffer();
       const analysis = await analyzeFile(file);
-      setSlotB({ file, buffer, analysis });
+      setSlotB({ file, analysis });
     } catch (err) {
-      console.error('Failed to analyze file B:', err);
+      setSlotB(null); setError(err instanceof Error ? err.message : 'Could not inspect file B.');
     } finally {
       setLoadingB(false);
     }
@@ -395,6 +399,7 @@ export default function ComparePage() {
   const handleReset = () => {
     setSlotA(null);
     setSlotB(null);
+    setError(null);
   };
 
   const comparisonResult =
@@ -431,7 +436,8 @@ export default function ComparePage() {
       {/* ========== TOOL ========== */}
       <section className="max-w-4xl mx-auto px-4 pb-16 space-y-6">
         {/* Drop zones */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {error && <p role="alert" className="text-sm text-risk-critical mb-4">{error}</p>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <MiniDrop
             label="Drop File A"
             slot={slotA}

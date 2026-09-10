@@ -805,7 +805,7 @@ describe('stripMp4 – removes udta box', () => {
   it('removes udta box from moov', () => {
     const input = buildIsobmffFile('isom', true);
     const { output } = stripMp4(input);
-    expect(output.byteLength).toBeLessThan(input.byteLength);
+    expect(output.byteLength).toBe(input.byteLength);
   });
 
   it('returns metadata category when udta is present', () => {
@@ -848,7 +848,7 @@ describe('stripHeic', () => {
   it('strips metadata from HEIC file', () => {
     const input = buildIsobmffFile('heic', true);
     const { output } = stripHeic(input);
-    expect(output.byteLength).toBeLessThan(input.byteLength);
+    expect(output.byteLength).toBe(input.byteLength);
   });
 
   it('throws on non-HEIC input', () => {
@@ -874,7 +874,7 @@ describe('stripAvif', () => {
   it('strips metadata from AVIF file', () => {
     const input = buildIsobmffFile('avif', true);
     const { output } = stripAvif(input);
-    expect(output.byteLength).toBeLessThan(input.byteLength);
+    expect(output.byteLength).toBe(input.byteLength);
   });
 
   it('throws on non-AVIF input', () => {
@@ -900,7 +900,7 @@ describe('stripM4a', () => {
   it('strips metadata from M4A file', () => {
     const input = buildIsobmffFile('M4A ', true);
     const { output } = stripM4a(input);
-    expect(output.byteLength).toBeLessThan(input.byteLength);
+    expect(output.byteLength).toBe(input.byteLength);
   });
 
   it('throws on non-M4A input', () => {

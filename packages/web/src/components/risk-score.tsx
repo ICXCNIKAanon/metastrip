@@ -20,8 +20,8 @@ export default function RiskScore({ score, level }: RiskScoreProps) {
   const { text, bg } = LEVEL_STYLES[level];
 
   useEffect(() => {
-    if (score === 0) {
-      setDisplayed(0);
+    if (score === 0 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayed(score);
       return;
     }
 

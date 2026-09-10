@@ -92,39 +92,13 @@ export interface CustomMetadata {
 }
 
 /**
- * Geocodes an address string to lat/lon using the free Nominatim API (OpenStreetMap).
- * Returns null if the address cannot be resolved.
- */
-export async function geocodeAddress(
-  address: string,
-): Promise<{ lat: number; lon: number; displayName: string } | null> {
-  try {
-    const encoded = encodeURIComponent(address);
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`,
-      {
-        headers: { 'User-Agent': 'MetaStrip/1.0 (https://metastrip.ai)' },
-      },
-    );
-    const data = await res.json();
-    if (data && data.length > 0) {
-      return {
-        lat: parseFloat(data[0].lat),
-        lon: parseFloat(data[0].lon),
-        displayName: data[0].display_name,
-      };
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Converts user-supplied CustomMetadata into the FakeMetadata format
  * expected by the inject-* modules.
  */
 export function customToFakeMetadata(custom: CustomMetadata): FakeMetadata {
+  if (custom.gps && (!Number.isFinite(custom.gps.lat) || !Number.isFinite(custom.gps.lon) || Math.abs(custom.gps.lat) > 90 || Math.abs(custom.gps.lon) > 180)) {
+    throw new Error('Replacement latitude must be between -90 and 90, and longitude between -180 and 180.');
+  }
   return {
     gps: custom.gps || { lat: 0, lon: 0, name: 'Unknown' },
     device: {

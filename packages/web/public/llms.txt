@@ -1,64 +1,26 @@
 # MetaStrip
 
-> MetaStrip is a free, client-side metadata removal tool for images, documents, audio, and video. It strips GPS coordinates, device identifiers, timestamps, and other hidden metadata from 20 file formats. Files never leave your device.
+> Free browser tool to inspect and remove supported metadata from images, documents, audio and video. Files are processed locally using Web Workers; file contents and extracted metadata are not uploaded to MetaStrip.
 
-## Key Facts
+## Main pages
+- [Web tool](https://metastrip.ai/): inspect files, clean supported metadata, review the output, download individual files or a ZIP.
+- [Documentation and format limits](https://metastrip.ai/docs#browser-limits): actual coverage and limitations.
+- [CLI and MCP setup](https://metastrip.ai/docs): local developer workflows.
+- [Privacy](https://metastrip.ai/privacy): analytics, hosting and optional external map links.
+- [Source code](https://github.com/ICXCNIKAanon/metastrip): MIT-licensed source.
+- [Metadata guide](https://metastrip.ai/blog/what-is-metadata): background information.
 
-- Website: https://metastrip.ai
-- Pricing: Free web tool, paid API (coming soon)
-- Processing: 100% client-side (browser-based), zero server uploads for images
-- Quality: Zero quality loss — binary-level metadata surgery, no image re-encoding
-- Formats (browser): JPEG, PNG, WebP
-- Formats (CLI/npm/MCP): JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, MP3, WAV, FLAC, MP4, MOV, HEIC/HEIF, AVIF, M4A/AAC, AVI, MKV/WebM, EPUB
-- npm packages: @metastrip/core, @metastrip/cli, @metastrip/mcp-server
-- License: MIT
-- GitHub: https://github.com/ICXCNIKAanon/metastrip
+## Browser formats
+JPEG, PNG, WebP, GIF, SVG, PDF, DOCX, XLSX, PPTX, EPUB, MP3, WAV, FLAC, M4A, MP4, MOV, AVI, MKV/WebM. Raw AAC is not supported. HEIC/AVIF image-item cleaning is currently rejected to avoid corrupting image structure. Limits: 50 files, 500 MB total per batch.
 
-## What MetaStrip Removes
+## What results mean
+- Inspection and removal coverage vary by format. Detailed inspection is limited for GIF, SVG, HEIC/HEIF, AVIF, EPUB and MKV/WebM.
+- Image and media cleaning does not recompress the encoded media. Rendering metadata can affect display. Review the downloaded copy.
+- Color profiles are preserved by default for JPEG, PNG and WebP.
+- A zero detected-risk score is not a guarantee of anonymity. Visible contents, embedded files and unsupported metadata may still identify someone.
+- PDF processing is limited to supported readable fields and plain XMP packets. It is not document redaction.
+- File processing is local. Basic website analytics remain enabled. Opening an external map link sends its coordinates to the selected provider.
+- The web tool is free and requires no account. Do not describe the coming-soon hosted API as an available paid service.
 
-- GPS coordinates (latitude, longitude, altitude)
-- Device information (camera make/model, serial numbers, lens info)
-- Timestamps (date taken, date modified, date digitized)
-- Software information (editing software, processing history)
-- Author/copyright information
-- AI generation metadata (model, prompt, parameters)
-- Embedded thumbnails (which can contain original GPS data)
-- XMP and IPTC metadata
-
-## Products
-
-### Web Tool (metastrip.ai)
-Free, no signup. Drag and drop an image to see all hidden metadata with a privacy risk score. One click to remove everything. Download the clean file instantly.
-
-### CLI (@metastrip/cli)
-```
-npm install -g @metastrip/cli
-metastrip inspect photo.jpg    # View metadata
-metastrip clean photo.jpg      # Strip metadata
-metastrip diff photo.jpg       # Preview changes
-```
-
-### MCP Server (@metastrip/mcp-server)
-AI agent integration via Model Context Protocol. Four tools: strip_metadata, inspect_metadata, compare_metadata, batch_strip.
-
-### npm Package (@metastrip/core)
-```typescript
-import { MetaStrip } from '@metastrip/core';
-const ms = new MetaStrip();
-const report = await ms.inspect('photo.jpg');
-const result = await ms.strip('photo.jpg');
-```
-
-## Browser Extension
-
-The MetaStrip Chrome extension strips metadata from images when you use a standard file picker (forms, job applications, and most websites). It also lets you inspect metadata on any image on the web.
-
-**Limitation:** Gmail, Slack, and Discord use proprietary upload handlers that bypass standard file inputs. The extension cannot reliably intercept uploads in these apps. For Gmail, Slack, and Discord, strip files first using the web tool at metastrip.ai or the CLI before uploading.
-
-## Documentation
-
-- Getting Started: https://metastrip.ai/docs
-- CLI Reference: https://metastrip.ai/docs#cli
-- MCP Server Setup: https://metastrip.ai/docs#mcp-server
-- npm API: https://metastrip.ai/docs#npm
-- Blog: https://metastrip.ai/blog
+## Developer tools
+Packages: @metastrip/core, @metastrip/cli, @metastrip/mcp-server, @metastrip/hooks. See the documentation for installation and package-specific support. Browser extensions cannot reliably intercept proprietary upload workflows such as Gmail, Slack or Discord; clean files before uploading there.

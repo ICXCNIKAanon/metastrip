@@ -23,7 +23,7 @@ function concat(chunks: Uint8Array[]): ArrayBuffer {
  * Encodes a sequence of GIF sub-blocks from a flat data array.
  * Splits data into sub-blocks of up to 255 bytes, terminated by 0x00.
  */
-function encodeSubBlocks(data: Uint8Array): Uint8Array {
+function encodeSubBlocks(data: Uint8Array): Uint8Array<ArrayBuffer> {
   const parts: Uint8Array[] = [];
   let i = 0;
   while (i < data.length) {
@@ -101,7 +101,7 @@ function buildGif(extraBlocks: Uint8Array[] = []): ArrayBuffer {
 /**
  * Builds a Comment Extension block (0x21 0xFE) with the given text.
  */
-function buildCommentExtension(comment: string): Uint8Array {
+function buildCommentExtension(comment: string): Uint8Array<ArrayBuffer> {
   const data = new Uint8Array(comment.split('').map(c => c.charCodeAt(0)));
   const subBlocks = encodeSubBlocks(data);
   const out = new Uint8Array(2 + subBlocks.byteLength);
@@ -115,7 +115,7 @@ function buildCommentExtension(comment: string): Uint8Array {
  * Builds an Application Extension block (0x21 0xFF).
  * appId should be 8 chars, authCode should be 3 chars.
  */
-function buildApplicationExtension(appId: string, authCode: string, data: Uint8Array = new Uint8Array([0x01, 0x00, 0x00])): Uint8Array {
+function buildApplicationExtension(appId: string, authCode: string, data: Uint8Array = new Uint8Array([0x01, 0x00, 0x00])): Uint8Array<ArrayBuffer> {
   // Fixed block: 0x0B length + 8 char app ID + 3 char auth code
   const fixedBlock = new Uint8Array(12); // 1 (count) + 11 (data)
   fixedBlock[0] = 0x0b; // block size = 11
@@ -134,7 +134,7 @@ function buildApplicationExtension(appId: string, authCode: string, data: Uint8A
 /**
  * Builds a Graphic Control Extension (0x21 0xF9) — should always be preserved.
  */
-function buildGraphicControlExtension(delayCs = 10): Uint8Array {
+function buildGraphicControlExtension(delayCs = 10): Uint8Array<ArrayBuffer> {
   // Fixed block: 4 bytes
   return new Uint8Array([
     0x21, 0xf9, // GCE introducer + label
@@ -149,7 +149,7 @@ function buildGraphicControlExtension(delayCs = 10): Uint8Array {
 /**
  * Builds a NETSCAPE2.0 Application Extension (animation looping).
  */
-function buildNetscapeExtension(loopCount = 0): Uint8Array {
+function buildNetscapeExtension(loopCount = 0): Uint8Array<ArrayBuffer> {
   const data = new Uint8Array([0x01, loopCount & 0xff, (loopCount >> 8) & 0xff]);
   return buildApplicationExtension('NETSCAPE', '2.0', data);
 }

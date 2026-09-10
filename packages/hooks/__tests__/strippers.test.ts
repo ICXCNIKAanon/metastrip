@@ -792,7 +792,7 @@ describe('stripPng – error handling', () => {
 describe('stripWebp – output validity', () => {
   it('output is still detected as WebP', () => {
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: new Uint8Array([0x01, 0x02]) }],
     });
     const { output } = stripWebp(input);
@@ -804,7 +804,7 @@ describe('stripWebp – removes EXIF chunk', () => {
   it('removes an EXIF chunk', () => {
     const exifData = new Uint8Array([0x49, 0x49, 0x2a, 0x00, 0x08, 0x00, 0x00, 0x00]);
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: exifData }],
     });
     expect(hasWebpChunk(input, 'EXIF')).toBe(true);
@@ -815,7 +815,7 @@ describe('stripWebp – removes EXIF chunk', () => {
   it('output is smaller after removing EXIF', () => {
     const bigExif = new Uint8Array(200).fill(0xee);
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: bigExif }],
     });
     const { output } = stripWebp(input);
@@ -827,7 +827,7 @@ describe('stripWebp – removes XMP chunk', () => {
   it('removes an XMP chunk', () => {
     const xmpData = new Uint8Array(Array.from('<x:xmpmeta/>').map((c) => c.charCodeAt(0)));
     const input = buildWebp({
-      vp8xFlags: 0x20,
+      vp8xFlags: 0x04,
       extraChunks: [{ type: 'XMP ', data: xmpData }],
     });
     expect(hasWebpChunk(input, 'XMP ')).toBe(true);
@@ -837,7 +837,7 @@ describe('stripWebp – removes XMP chunk', () => {
 
   it('removes both EXIF and XMP in a single call', () => {
     const input = buildWebp({
-      vp8xFlags: 0x30,
+      vp8xFlags: 0x0c,
       extraChunks: [
         { type: 'EXIF', data: new Uint8Array([0x49, 0x49, 0x2a, 0x00]) },
         { type: 'XMP ', data: new Uint8Array(Array.from('<x:xmpmeta/>').map((c) => c.charCodeAt(0))) },
@@ -852,7 +852,7 @@ describe('stripWebp – removes XMP chunk', () => {
 describe('stripWebp – preserves image data', () => {
   it('preserves VP8 chunk', () => {
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: new Uint8Array([0x01, 0x02]) }],
     });
     const { output } = stripWebp(input);
@@ -861,7 +861,7 @@ describe('stripWebp – preserves image data', () => {
 
   it('preserves VP8X chunk', () => {
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: new Uint8Array([0x01, 0x02]) }],
     });
     const { output } = stripWebp(input);
@@ -870,7 +870,7 @@ describe('stripWebp – preserves image data', () => {
 
   it('preserves ICCP (ICC profile) always', () => {
     const input = buildWebp({
-      vp8xFlags: 0x14,
+      vp8xFlags: 0x28,
       extraChunks: [
         { type: 'ICCP', data: new Uint8Array([0x00, 0x01, 0x02]) },
         { type: 'EXIF', data: new Uint8Array([0x49, 0x49]) },
@@ -883,7 +883,7 @@ describe('stripWebp – preserves image data', () => {
   it('VP8 image data bytes are bit-identical after stripping', () => {
     const vp8Data = new Uint8Array([0xde, 0xad, 0xbe, 0xef, 0xca, 0xfe, 0xba, 0xbe]);
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: new Uint8Array([0x01]) }],
       vp8Data,
     });
@@ -899,27 +899,27 @@ describe('stripWebp – preserves image data', () => {
 });
 
 describe('stripWebp – VP8X flags update', () => {
-  it('clears EXIF bit (bit 4) after stripping EXIF', () => {
+  it('clears EXIF bit (bit 3) after stripping EXIF', () => {
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: new Uint8Array([0x01, 0x02]) }],
     });
     const { output } = stripWebp(input);
-    expect(getVp8xFlags(output) & (1 << 4)).toBe(0);
+    expect(getVp8xFlags(output) & (1 << 3)).toBe(0);
   });
 
-  it('clears XMP bit (bit 5) after stripping XMP', () => {
+  it('clears XMP bit (bit 2) after stripping XMP', () => {
     const input = buildWebp({
-      vp8xFlags: 0x20,
+      vp8xFlags: 0x04,
       extraChunks: [{ type: 'XMP ', data: new Uint8Array([0x3c, 0x78]) }],
     });
     const { output } = stripWebp(input);
-    expect(getVp8xFlags(output) & (1 << 5)).toBe(0);
+    expect(getVp8xFlags(output) & (1 << 2)).toBe(0);
   });
 
   it('clears both EXIF and XMP bits when both chunks are removed', () => {
     const input = buildWebp({
-      vp8xFlags: 0x30,
+      vp8xFlags: 0x0c,
       extraChunks: [
         { type: 'EXIF', data: new Uint8Array([0x01]) },
         { type: 'XMP ', data: new Uint8Array([0x02]) },
@@ -927,13 +927,13 @@ describe('stripWebp – VP8X flags update', () => {
     });
     const { output } = stripWebp(input);
     const flags = getVp8xFlags(output);
-    expect(flags & (1 << 4)).toBe(0);
-    expect(flags & (1 << 5)).toBe(0);
+    expect(flags & (1 << 3)).toBe(0);
+    expect(flags & (1 << 2)).toBe(0);
   });
 
-  it('preserves ICC bit (bit 2) when EXIF/XMP are stripped', () => {
+  it('preserves ICC bit (bit 5) when EXIF/XMP are stripped', () => {
     const input = buildWebp({
-      vp8xFlags: 0x14,
+      vp8xFlags: 0x28,
       extraChunks: [
         { type: 'ICCP', data: new Uint8Array([0x00, 0x01]) },
         { type: 'EXIF', data: new Uint8Array([0x49, 0x49]) },
@@ -941,15 +941,15 @@ describe('stripWebp – VP8X flags update', () => {
     });
     const { output } = stripWebp(input);
     const flags = getVp8xFlags(output);
-    expect(flags & (1 << 2)).toBe(1 << 2);
-    expect(flags & (1 << 4)).toBe(0);
+    expect(flags & (1 << 5)).toBe(1 << 5);
+    expect(flags & (1 << 3)).toBe(0);
   });
 });
 
 describe('stripWebp – RIFF file size header', () => {
   it('RIFF size field equals total file size minus 8 after stripping', () => {
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: new Uint8Array(50).fill(0xee) }],
     });
     const { output } = stripWebp(input);
@@ -966,7 +966,7 @@ describe('stripWebp – RIFF file size header', () => {
 describe('stripWebp – category tracking', () => {
   it('returns GPS, device, timestamps categories for EXIF', () => {
     const input = buildWebp({
-      vp8xFlags: 0x10,
+      vp8xFlags: 0x08,
       extraChunks: [{ type: 'EXIF', data: new Uint8Array([0x49, 0x49]) }],
     });
     const { categories } = stripWebp(input);
@@ -977,7 +977,7 @@ describe('stripWebp – category tracking', () => {
 
   it('returns XMP category for XMP chunk', () => {
     const input = buildWebp({
-      vp8xFlags: 0x20,
+      vp8xFlags: 0x04,
       extraChunks: [{ type: 'XMP ', data: new Uint8Array([0x3c, 0x78]) }],
     });
     const { categories } = stripWebp(input);
@@ -992,7 +992,7 @@ describe('stripWebp – category tracking', () => {
 
   it('returns combined categories for EXIF and XMP', () => {
     const input = buildWebp({
-      vp8xFlags: 0x30,
+      vp8xFlags: 0x0c,
       extraChunks: [
         { type: 'EXIF', data: new Uint8Array([0x49, 0x49]) },
         { type: 'XMP ', data: new Uint8Array([0x3c, 0x78]) },
@@ -1005,7 +1005,7 @@ describe('stripWebp – category tracking', () => {
 
   it('ICC preservation does not appear in categories', () => {
     const input = buildWebp({
-      vp8xFlags: 0x04,
+      vp8xFlags: 0x20,
       extraChunks: [{ type: 'ICCP', data: new Uint8Array([0x00, 0x01]) }],
     });
     const { categories } = stripWebp(input);
@@ -1066,7 +1066,7 @@ describe('ICC profiles always preserved', () => {
 
   it('WebP: ICCP is preserved', () => {
     const input = buildWebp({
-      vp8xFlags: 0x14,
+      vp8xFlags: 0x28,
       extraChunks: [
         { type: 'ICCP', data: new Uint8Array([0x00, 0x01, 0x02]) },
         { type: 'EXIF', data: new Uint8Array([0x49, 0x49]) },

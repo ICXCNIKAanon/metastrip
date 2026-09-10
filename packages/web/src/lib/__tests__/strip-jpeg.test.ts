@@ -54,7 +54,7 @@ function buildJpeg(
 }
 
 /** Encodes a single marker segment: 0xFF marker_byte length_hi length_lo ...payload */
-function encodeSegment(marker: number, payload: Uint8Array): Uint8Array {
+function encodeSegment(marker: number, payload: Uint8Array): Uint8Array<ArrayBuffer> {
   const totalLength = 2 + payload.byteLength; // length field includes itself
   const out = new Uint8Array(2 + 2 + payload.byteLength);
   out[0] = 0xff;

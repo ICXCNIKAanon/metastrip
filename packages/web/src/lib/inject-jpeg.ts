@@ -9,6 +9,7 @@
  * famous landmarks so it's clearly decoy data, not deception.
  */
 
+import { escapeXml } from './xml';
 import type { FakeMetadata } from './fake-metadata';
 
 // ---------------------------------------------------------------------------
@@ -87,7 +88,8 @@ export function injectFakeMetadataJpeg(
  * Length includes the 2 length bytes but not the 0xFF+marker prefix.
  */
 function buildMarkerSegment(markerByte: number, payload: Uint8Array): Uint8Array {
-  const length = 2 + payload.length; // length field includes itself
+  const length = 2 + payload.length;
+  if (length > 65535) throw new Error('Replacement metadata is too long for a JPEG segment.'); // length field includes itself
   const segment = new Uint8Array(2 + length);
   segment[0] = 0xff;
   segment[1] = markerByte;
@@ -139,9 +141,9 @@ function buildXmpPayload(fake: FakeMetadata): Uint8Array {
       xmlns:xmp="http://ns.adobe.com/xap/1.0/"
       exif:GPSLatitude="${latXmp}"
       exif:GPSLongitude="${lonXmp}"
-      tiff:Make="${fake.device.make}"
-      tiff:Model="${fake.device.model}"
-      xmp:CreateDate="${dateIso}"
+      tiff:Make="${escapeXml(fake.device.make)}"
+      tiff:Model="${escapeXml(fake.device.model)}"
+      xmp:CreateDate="${escapeXml(dateIso)}"
     />
   </rdf:RDF>
 </x:xmpmeta>

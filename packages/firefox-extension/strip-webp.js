@@ -30,8 +30,8 @@ var _WEBP_CC_VP8X = _webpFourCC('VP8X');
 var _WEBP_CC_ICCP = _webpFourCC('ICCP');
 
 // VP8X flags bit positions
-var _WEBP_FLAG_EXIF_BIT = 4;
-var _WEBP_FLAG_XMP_BIT  = 5;
+var _WEBP_FLAG_EXIF_BIT = 3;
+var _WEBP_FLAG_XMP_BIT  = 2;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -56,8 +56,8 @@ window.__metastrip.isWebp = function(buffer) {
  * Chunks removed: EXIF, XMP
  * Chunks preserved: VP8, VP8L, VP8X (flags patched), ALPH, ANIM, ANMF, ICCP
  *
- * After stripping, the VP8X flags byte is updated to clear EXIF (bit 4)
- * and XMP (bit 5), and the RIFF file size header is recalculated.
+ * After stripping, the VP8X flags byte is updated to clear EXIF (bit 3)
+ * and XMP (bit 2), and the RIFF file size header is recalculated.
  *
  * @param {ArrayBuffer} buffer - Raw WebP bytes
  * @returns {ArrayBuffer} Stripped WebP bytes (zero quality loss)
@@ -95,8 +95,7 @@ window.__metastrip.stripWebp = function(buffer) {
 
     if (chunkEnd > len) {
       // Chunk claims more bytes than remain — keep what's there
-      chunks.push([offset, len]);
-      break;
+      throw new Error('Truncated WebP chunk: file was not modified');
     }
 
     var keep = _webpShouldKeep(cc);
@@ -138,7 +137,7 @@ window.__metastrip.stripWebp = function(buffer) {
   var outView = new DataView(out.buffer);
   outView.setUint32(4, totalSize - 8, true);
 
-  // Update VP8X flags: clear EXIF (bit 4) and XMP (bit 5)
+  // Update VP8X flags: clear EXIF (bit 3) and XMP (bit 2)
   if (vp8xOutputOffset !== -1 && vp8xOutputOffset < out.byteLength) {
     var flagsByte = out[vp8xOutputOffset];
     var updated = flagsByte & ~((1 << _WEBP_FLAG_EXIF_BIT) | (1 << _WEBP_FLAG_XMP_BIT));

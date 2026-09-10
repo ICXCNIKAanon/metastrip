@@ -6,7 +6,7 @@ import { isMp4, stripMp4 } from '../strip-mp4';
 // ---------------------------------------------------------------------------
 
 /** Builds an ISOBMFF box: [size 4B BE][type 4B][data] */
-function makeBox(type: string, data: Uint8Array): Uint8Array {
+function makeBox(type: string, data: Uint8Array): Uint8Array<ArrayBuffer> {
   const size = 8 + data.length;
   const box = new Uint8Array(size);
   new DataView(box.buffer).setUint32(0, size);
@@ -104,7 +104,7 @@ function moovContainsBox(buffer: ArrayBuffer, childType: string): boolean {
 // ---------------------------------------------------------------------------
 
 /** Minimal ftyp box with brand 'mp41' */
-function makeFtyp(): Uint8Array {
+function makeFtyp(): Uint8Array<ArrayBuffer> {
   // ftyp: major brand (4) + minor version (4) + compatible brands (4 each)
   const data = new Uint8Array(8);
   data[0] = 0x6D; data[1] = 0x70; data[2] = 0x34; data[3] = 0x31; // 'mp41'
@@ -113,17 +113,17 @@ function makeFtyp(): Uint8Array {
 }
 
 /** Minimal mvhd box (movie header, 108 bytes of data) */
-function makeMvhd(): Uint8Array {
+function makeMvhd(): Uint8Array<ArrayBuffer> {
   return makeBox('mvhd', new Uint8Array(108).fill(0x00));
 }
 
 /** Minimal trak box with some dummy data */
-function makeTrak(): Uint8Array {
-  return makeBox('trak', new Uint8Array(32).fill(0xAB));
+function makeTrak(): Uint8Array<ArrayBuffer> {
+  return makeBox('trak', makeBox('tkhd', new Uint8Array(32).fill(0xAB)));
 }
 
 /** A udta box with some user metadata */
-function makeUdta(): Uint8Array {
+function makeUdta(): Uint8Array<ArrayBuffer> {
   // ©nam atom inside udta
   const namData = new TextEncoder().encode('Test Video Title');
   const namBox = makeBox('\xA9nam', namData);
@@ -131,17 +131,17 @@ function makeUdta(): Uint8Array {
 }
 
 /** A top-level meta box */
-function makeMetaBox(): Uint8Array {
+function makeMetaBox(): Uint8Array<ArrayBuffer> {
   return makeBox('meta', new Uint8Array(32).fill(0xBB));
 }
 
 /** A top-level uuid box (XMP container) */
-function makeUuidBox(): Uint8Array {
+function makeUuidBox(): Uint8Array<ArrayBuffer> {
   return makeBox('uuid', new Uint8Array(48).fill(0xCC));
 }
 
 /** A mdat box with dummy media data */
-function makeMdat(size = 64): Uint8Array {
+function makeMdat(size = 64): Uint8Array<ArrayBuffer> {
   const data = new Uint8Array(size);
   for (let i = 0; i < size; i++) data[i] = i & 0xFF;
   return makeBox('mdat', data);
@@ -255,10 +255,10 @@ describe('stripMp4 – removes udta box inside moov', () => {
     expect(moovContainsBox(stripped, 'udta')).toBe(false);
   });
 
-  it('output is smaller when udta is removed', () => {
+  it('output offsets are preserved when udta is removed', () => {
     const buf = buildMp4({ includeUdta: true });
     const stripped = stripMp4(buf);
-    expect(stripped.byteLength).toBeLessThan(buf.byteLength);
+    expect(stripped.byteLength).toBe(buf.byteLength);
   });
 
   it('does not reduce size when there is no udta', () => {
@@ -412,10 +412,10 @@ describe('stripMp4 – removes top-level meta and uuid boxes', () => {
     expect(hasTopLevelBox(stripped, 'uuid')).toBe(false);
   });
 
-  it('output is smaller when meta is removed', () => {
+  it('output offsets are preserved when meta is removed', () => {
     const buf = buildMp4({ includeTopLevelMeta: true });
     const stripped = stripMp4(buf);
-    expect(stripped.byteLength).toBeLessThan(buf.byteLength);
+    expect(stripped.byteLength).toBe(buf.byteLength);
   });
 });
 
@@ -455,6 +455,6 @@ describe('stripMp4 – combined stripping scenario', () => {
     expect(moovContainsBox(stripped, 'udta')).toBe(false);
     expect(hasTopLevelBox(stripped, 'meta')).toBe(false);
     expect(hasTopLevelBox(stripped, 'uuid')).toBe(false);
-    expect(stripped.byteLength).toBeLessThan(buf.byteLength);
+    expect(stripped.byteLength).toBe(buf.byteLength);
   });
 });

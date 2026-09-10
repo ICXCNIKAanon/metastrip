@@ -7,7 +7,7 @@ import { isAvif, stripAvif } from '../strip-avif';
 // ---------------------------------------------------------------------------
 
 /** Builds an ISOBMFF box: [size 4B BE][type 4B][data] */
-function makeBox(type: string, data: Uint8Array): Uint8Array {
+function makeBox(type: string, data: Uint8Array): Uint8Array<ArrayBuffer> {
   const size = 8 + data.length;
   const box = new Uint8Array(size);
   new DataView(box.buffer).setUint32(0, size);
@@ -77,7 +77,7 @@ function moovContainsBox(buffer: ArrayBuffer, childType: string): boolean {
 // ---------------------------------------------------------------------------
 
 /** Builds a ftyp box with the given major brand (4 chars). */
-function makeFtyp(brand: string): Uint8Array {
+function makeFtyp(brand: string): Uint8Array<ArrayBuffer> {
   const data = new Uint8Array(8);
   // major brand (4 bytes)
   data[0] = brand.charCodeAt(0);
@@ -90,19 +90,19 @@ function makeFtyp(brand: string): Uint8Array {
 }
 
 /** Minimal mvhd box */
-function makeMvhd(): Uint8Array {
+function makeMvhd(): Uint8Array<ArrayBuffer> {
   return makeBox('mvhd', new Uint8Array(108).fill(0x00));
 }
 
 /** A udta box with some user metadata */
-function makeUdta(): Uint8Array {
+function makeUdta(): Uint8Array<ArrayBuffer> {
   const namData = new TextEncoder().encode('Test Image Title');
   const namBox = makeBox('\xA9nam', namData);
   return makeBox('udta', namBox);
 }
 
 /** A mdat box with dummy pixel data */
-function makeMdat(size = 32): Uint8Array {
+function makeMdat(size = 32): Uint8Array<ArrayBuffer> {
   const data = new Uint8Array(size);
   for (let i = 0; i < size; i++) data[i] = i & 0xFF;
   return makeBox('mdat', data);
@@ -260,10 +260,10 @@ describe('stripHeic – removes udta from moov', () => {
     expect(moovContainsBox(stripped, 'udta')).toBe(false);
   });
 
-  it('output is smaller when udta is removed', () => {
+  it('output offsets are preserved when udta is removed', () => {
     const buf = buildContainer('heic', true);
     const stripped = stripHeic(buf);
-    expect(stripped.byteLength).toBeLessThan(buf.byteLength);
+    expect(stripped.byteLength).toBe(buf.byteLength);
   });
 
   it('does not reduce size when there is no udta', () => {
@@ -324,10 +324,10 @@ describe('stripAvif – removes udta from moov', () => {
     expect(moovContainsBox(stripped, 'udta')).toBe(false);
   });
 
-  it('output is smaller when udta is removed', () => {
+  it('output offsets are preserved when udta is removed', () => {
     const buf = buildContainer('avif', true);
     const stripped = stripAvif(buf);
-    expect(stripped.byteLength).toBeLessThan(buf.byteLength);
+    expect(stripped.byteLength).toBe(buf.byteLength);
   });
 
   it('does not reduce size when there is no udta', () => {

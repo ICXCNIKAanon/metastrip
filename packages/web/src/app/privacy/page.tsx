@@ -28,7 +28,7 @@ export default function PrivacyPage() {
         Privacy Policy
       </h1>
       <p className="text-text-tertiary mb-2">
-        Last updated: March 2026
+        Last updated: September 10, 2026
       </p>
       <p className="text-text-secondary mb-16">
         MetaStrip is operated by <strong className="text-text-primary">ICXCNIKAanon</strong>. Questions?{' '}
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
           <p className="text-text-secondary leading-relaxed">
             MetaStrip's web tool runs entirely in your browser. Your files never leave your device. We do
             not have a server that receives your images. We collect minimal analytics (page views, no
-            personal identifiers) and store your email only if you join the API waitlist.
+            personal identifiers) and receive your email if you choose to contact us.
           </p>
         </section>
 
@@ -84,11 +84,11 @@ export default function PrivacyPage() {
             </div>
 
             <div className="border-l-2 border-primary/30 pl-5">
-              <h3 className="text-text-primary font-semibold mb-2">API waitlist emails</h3>
+              <h3 className="text-text-primary font-semibold mb-2">API interest emails</h3>
               <p className="text-text-secondary leading-relaxed">
-                If you submit your email address to join the API waitlist, we store that email address
-                solely to notify you when the API launches. We will not send marketing emails or sell
-                your address to third parties.
+                The API interest link opens your email application. Nothing is submitted by the website.
+                If you send us an email, we receive your email address and the information you include
+                so that we can respond to your request.
               </p>
             </div>
 
@@ -133,14 +133,13 @@ export default function PrivacyPage() {
 
             <div className="border-l-2 border-border pl-5">
               <h3 className="text-text-primary font-semibold mb-2">
-                Leaflet / OpenStreetMap (GPS map tiles)
+                Optional external map links
               </h3>
               <p className="text-text-secondary leading-relaxed">
-                When MetaStrip detects GPS coordinates in a file, it displays them on an interactive map
-                using Leaflet. Map tiles are loaded from CartoDB's CDN. This means your browser makes a
-                request to CartoDB's servers, which sees your IP address. No file data is ever sent —
-                only the tile requests needed to render the map. If you prefer not to do this, simply
-                don't use the GPS preview feature.
+                Extracted coordinates are displayed locally. The tool does not automatically load map
+                tiles or send these coordinates to a third party. If you choose “Open this location in
+                Google Maps,” the coordinates are sent to Google Maps in the link URL. Custom replacement
+                coordinates are entered locally without address lookup requests.
               </p>
             </div>
           </div>

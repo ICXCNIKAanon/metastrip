@@ -19,8 +19,8 @@ export function isSvg(buf: Buffer): boolean {
   } catch {
     return false;
   }
-  const stripped = text.replace(/<!--[\s\S]*?-->/g, '').trimStart();
-  return stripped.startsWith('<?xml') || stripped.startsWith('<svg');
+  const stripped = text.replace(/<!--[\s\S]*?-->/g, '').replace(/<\?[\s\S]*?\?>/g, '').trimStart();
+  return /^(?:<\?xml\b[^?]*\?>\s*)?(?:<!DOCTYPE\s+svg\b[^>]*>\s*)?<svg(?:\s|>)/i.test(stripped);
 }
 
 export function stripSvg(input: Buffer): StripSvgResult {

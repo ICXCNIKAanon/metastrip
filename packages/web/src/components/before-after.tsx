@@ -1,478 +1,201 @@
-'use client';
-
-import { useCallback } from 'react';
-import type { FileAnalysis } from '@/lib/metadata';
-import { CATEGORY_ICONS } from '@/lib/categories';
-import type { MetadataCategory } from '@/lib/categories';
-
-/* ------------------------------------------------------------------ */
-/* Shared types                                                       */
-/* ------------------------------------------------------------------ */
-
-interface BatchResult {
+"use client";
+import { useState } from "react";
+import type { FileAnalysis } from "@/lib/metadata";
+import { cleanFileName, uniqueDownloadNames } from "@/lib/file-input";
+import MetadataTable from "./metadata-table";
+export interface BatchResult {
   analysis: FileAnalysis;
+  afterAnalysis: FileAnalysis;
   strippedBuffer: ArrayBuffer;
   strippedSize: number;
   fileName: string;
   injectedSummary?: string;
 }
-
-interface BeforeAfterProps {
-  // Single-file mode (legacy)
-  analysis?: FileAnalysis;
-  strippedSize?: number;
-  strippedBuffer?: ArrayBuffer;
-  processingTimeMs?: number;
-  fileName?: string;
-  // Batch mode
-  results?: BatchResult[];
-  // Common
-  onReset: () => void;
+function formatBytes(bytes: number) {
+  return bytes < 1024
+    ? `${bytes} B`
+    : bytes < 1048576
+      ? `${(bytes / 1024).toFixed(1)} KB`
+      : `${(bytes / 1048576).toFixed(1)} MB`;
 }
-
-/* ------------------------------------------------------------------ */
-/* Constants                                                          */
-/* ------------------------------------------------------------------ */
-
-const CATEGORY_ORDER: MetadataCategory[] = [
-  'gps', 'device', 'author', 'timestamps', 'software',
-  'ai', 'thumbnail', 'xmp', 'iptc', 'icc', 'other',
-];
-
-const RISK_LEVEL_LABELS: Record<FileAnalysis['riskLevel'], string> = {
-  critical: 'CRITICAL',
-  high: 'HIGH',
-  medium: 'MEDIUM',
-  low: 'LOW',
-  none: 'SAFE',
-};
-
-const RISK_SCORE_CLASSES: Record<FileAnalysis['riskLevel'], string> = {
-  critical: 'text-risk-critical',
-  high: 'text-risk-high',
-  medium: 'text-risk-medium',
-  low: 'text-accent',
-  none: 'text-risk-safe',
-};
-
-const RISK_BADGE_BG: Record<FileAnalysis['riskLevel'], string> = {
-  critical: 'bg-risk-critical/20 text-risk-critical',
-  high: 'bg-risk-high/20 text-risk-high',
-  medium: 'bg-risk-medium/20 text-risk-medium',
-  low: 'bg-accent/20 text-accent',
-  none: 'bg-risk-safe/20 text-risk-safe',
-};
-
-/* ------------------------------------------------------------------ */
-/* Helpers                                                            */
-/* ------------------------------------------------------------------ */
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
-}
-
-function getCleanFileName(name: string): string {
-  const lastDot = name.lastIndexOf('.');
-  if (lastDot === -1) return `${name}.cleaned`;
-  const base = name.slice(0, lastDot);
-  const ext = name.slice(lastDot + 1);
-  return `${base}.cleaned.${ext}`;
-}
-
-function triggerDownload(buffer: ArrayBuffer, fileName: string) {
-  const blob = new Blob([buffer], { type: 'application/octet-stream' });
-  const blobUrl = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), {
-    href: blobUrl,
-    download: getCleanFileName(fileName),
+function download(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const anchor = Object.assign(document.createElement("a"), {
+    href: url,
+    download: fileName,
   });
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
 }
-
-/* ------------------------------------------------------------------ */
-/* Single-file view                                                   */
-/* ------------------------------------------------------------------ */
-
-function SingleView({
-  analysis,
-  strippedSize,
-  strippedBuffer,
-  processingTimeMs,
-  fileName,
-  onReset,
-  injectedSummary,
-}: {
-  analysis: FileAnalysis;
-  strippedSize: number;
-  strippedBuffer: ArrayBuffer;
-  processingTimeMs: number;
-  fileName: string;
-  onReset: () => void;
-  injectedSummary?: string;
-}) {
-  const { fileSize, riskScore, riskLevel, byCategory } = analysis;
-
-  const savedBytes = fileSize - strippedSize;
-  const savedKB = (savedBytes / 1024).toFixed(1);
-  const savedPct = fileSize > 0 ? Math.round((savedBytes / fileSize) * 100) : 0;
-  const keptPct = 100 - savedPct;
-
-  const strippedEntriesCount = analysis.entries.length;
-
-  const categoriesWithEntries = CATEGORY_ORDER.filter(
-    (cat) => byCategory[cat]?.length > 0,
-  );
-
-  const handleDownload = useCallback(() => {
-    triggerDownload(strippedBuffer, fileName);
-  }, [strippedBuffer, fileName]);
-
-  const handleCopyLink = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText('https://metastrip.ai');
-    } catch {
-      // Silently fail if clipboard not available
-    }
-  }, []);
-
-  const twitterText = encodeURIComponent(
-    'I just found out my photo had hidden GPS data, device info, and more. Strip your metadata free at https://metastrip.ai',
-  );
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${twitterText}`;
-
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Success banner */}
-      <div className="flex flex-col items-center gap-2 text-center bg-risk-safe/5 border border-risk-safe/20 rounded-card p-5">
-        <span className="text-4xl leading-none" aria-hidden="true">🛡️</span>
-        <h2 className="text-xl font-bold text-primary">Metadata Removed</h2>
-        <p className="text-sm text-text-tertiary">
-          {strippedEntriesCount} entries stripped · {savedKB} KB saved · processed in {processingTimeMs}ms
-        </p>
-      </div>
-
-      {/* Side-by-side comparison */}
-      <div className="grid grid-cols-2 gap-4" aria-label="Before and after comparison">
-        {/* Before — red tinted */}
-        <div className="bg-risk-critical/5 border border-risk-critical/20 rounded-card p-5 flex flex-col gap-3">
-          <p className="text-xs font-semibold text-text-tertiary uppercase tracking-widest">Before</p>
-          <div className="flex flex-col items-center gap-2">
-            <span className={`text-5xl font-extrabold tabular-nums leading-none ${RISK_SCORE_CLASSES[riskLevel]}`}>
-              {riskScore}
-            </span>
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-button ${RISK_BADGE_BG[riskLevel]}`}>
-              {RISK_LEVEL_LABELS[riskLevel]}
-            </span>
-          </div>
-          <ul className="flex flex-col gap-1.5 mt-1">
-            {categoriesWithEntries.map((cat) => (
-              <li key={cat} className="flex items-center gap-2 text-xs text-text-secondary">
-                <span aria-hidden="true">{CATEGORY_ICONS[cat]}</span>
-                <span className="capitalize">{cat}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* After — green tinted */}
-        <div className="bg-risk-safe/5 border border-risk-safe/20 rounded-card p-5 flex flex-col gap-3">
-          <p className="text-xs font-semibold text-text-tertiary uppercase tracking-widest">After</p>
-          <div className="flex flex-col items-center gap-2">
-            <span className="text-5xl font-extrabold tabular-nums leading-none text-risk-safe">
-              0
-            </span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-button bg-risk-safe/20 text-risk-safe">
-              SAFE
-            </span>
-          </div>
-          <ul className="flex flex-col gap-1.5 mt-1">
-            {[
-              'No GPS data',
-              'No device info',
-              'No timestamps',
-              'Color profile preserved',
-              `Image quality: lossless`,
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-2 text-xs text-risk-safe">
-                <span aria-hidden="true">✓</span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      {/* Injected decoy metadata summary */}
-      {injectedSummary && (
-        <div className="bg-accent/5 border border-accent/20 rounded-card p-4 flex items-start gap-3">
-          <span className="text-lg leading-none flex-shrink-0" aria-hidden="true">🎭</span>
-          <div>
-            <p className="text-sm font-semibold text-text-primary">Decoy metadata injected</p>
-            <p className="text-xs text-text-secondary mt-0.5">{injectedSummary}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Size comparison bar */}
-      <div className="bg-surface border border-border rounded-card p-4 flex flex-col gap-3">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-text-secondary font-medium">File size</span>
-          <span className="text-risk-safe font-semibold">
-            -{savedKB} KB ({savedPct}%)
-          </span>
-        </div>
-        {/* Bar */}
-        <div className="relative h-2.5 bg-border rounded-full overflow-hidden">
-          <div
-            className="absolute left-0 top-0 h-full bg-risk-safe rounded-full transition-all duration-700"
-            style={{ width: `${keptPct}%` }}
-          />
-        </div>
-        {/* Labels */}
-        <div className="flex items-center justify-between text-xs text-text-tertiary">
-          <span>Original: {formatBytes(fileSize)}</span>
-          <span>Cleaned: {formatBytes(strippedSize)}</span>
-        </div>
-      </div>
-
-      {/* Action buttons */}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={handleDownload}
-          className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold py-3 px-5 rounded-button text-base transition-colors duration-150"
-        >
-          Download Clean File
-        </button>
-        <button
-          type="button"
-          onClick={onReset}
-          title="Analyze another file"
-          aria-label="Analyze another file"
-          className="flex-shrink-0 bg-surface hover:bg-border/60 border border-border text-text-secondary hover:text-text-primary font-bold py-3 px-4 rounded-button text-base transition-colors duration-150"
-        >
-          +
-        </button>
-      </div>
-
-      {/* Share prompt */}
-      <div className="flex flex-col items-center gap-2 text-center pt-1">
-        <p className="text-sm text-text-secondary">Surprised by what your photo revealed?</p>
-        <div className="flex items-center gap-4 text-sm">
-          <a
-            href={twitterUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent hover:underline font-medium transition-colors duration-150"
-          >
-            Share on X
-          </a>
-          <span className="text-border" aria-hidden="true">·</span>
-          <button
-            type="button"
-            onClick={handleCopyLink}
-            className="text-text-tertiary hover:text-text-secondary font-medium transition-colors duration-150"
-          >
-            Copy link
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Batch view                                                         */
-/* ------------------------------------------------------------------ */
-
-function BatchView({
+export default function BeforeAfter({
   results,
   onReset,
 }: {
   results: BatchResult[];
   onReset: () => void;
 }) {
-  const totalEntries = results.reduce((sum, r) => sum + r.analysis.entries.length, 0);
-  const totalSavedBytes = results.reduce((sum, r) => sum + (r.analysis.fileSize - r.strippedSize), 0);
-  const totalSavedKB = (totalSavedBytes / 1024).toFixed(1);
-
-  const handleDownloadOne = useCallback((r: BatchResult) => {
-    triggerDownload(r.strippedBuffer, r.fileName);
-  }, []);
-
-  const handleDownloadAll = useCallback(() => {
-    // Download each file individually with a small stagger to avoid browser blocking
-    results.forEach((r, i) => {
-      setTimeout(() => triggerDownload(r.strippedBuffer, r.fileName), i * 200);
-    });
-  }, [results]);
-
-  const handleCopyLink = useCallback(async () => {
+  const [zipping, setZipping] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  async function downloadAll() {
+    setZipping(true);
+    setError(null);
     try {
-      await navigator.clipboard.writeText('https://metastrip.ai');
+      const { default: JSZip } = await import("jszip");
+      const zip = new JSZip();
+      const names = uniqueDownloadNames(
+        results.map((result) => result.fileName),
+      );
+      // Fixed ZIP dates prevent archive entry timestamps from revealing file dates.
+      results.forEach((result, index) =>
+        zip.file(names[index], result.strippedBuffer, {
+          date: new Date("1980-01-01T00:00:00Z"),
+        }),
+      );
+      download(
+        await zip.generateAsync({ type: "blob", compression: "STORE" }),
+        "metastrip-cleaned.zip",
+      );
     } catch {
-      // Silently fail if clipboard not available
+      setError("Could not create the ZIP. Download files individually below.");
+    } finally {
+      setZipping(false);
     }
-  }, []);
-
-  const twitterText = encodeURIComponent(
-    'I just found out my photos had hidden GPS data, device info, and more. Strip your metadata free at https://metastrip.ai',
-  );
-  const twitterUrl = `https://twitter.com/intent/tweet?text=${twitterText}`;
-
+  }
   return (
-    <div className="flex flex-col gap-6">
-      {/* Success banner */}
-      <div className="flex flex-col items-center gap-2 text-center bg-risk-safe/5 border border-risk-safe/20 rounded-card p-5">
-        <span className="text-4xl leading-none" aria-hidden="true">🛡️</span>
-        <h2 className="text-xl font-bold text-primary">
-          Metadata Removed from {results.length} Files
+    <div className="space-y-5">
+      <div
+        role="status"
+        className="p-6 text-center rounded-card border border-primary/30 bg-primary/5"
+      >
+        <h2 className="text-2xl font-bold">
+          {results.length === 1
+            ? "Your cleaned file is ready"
+            : `${results.length} cleaned files are ready`}
         </h2>
-        <p className="text-sm text-text-tertiary">
-          {totalEntries} entries stripped · {totalSavedKB} KB saved total
+        <p className="text-sm text-text-secondary mt-2">
+          Processed and inspected again on your device. Your original files are
+          unchanged.
         </p>
       </div>
-
-      {/* Injected decoy banner (shows once if any file has injection) */}
-      {results.some((r) => r.injectedSummary) && (
-        <div className="bg-accent/5 border border-accent/20 rounded-card p-4 flex items-start gap-3">
-          <span className="text-lg leading-none flex-shrink-0" aria-hidden="true">🎭</span>
-          <div>
-            <p className="text-sm font-semibold text-text-primary">Decoy metadata injected</p>
-            <p className="text-xs text-text-secondary mt-0.5">
-              Each file received unique fake GPS, device, and timestamp data
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Per-file rows with download buttons */}
-      <div className="flex flex-col gap-2">
-        {results.map((r, i) => {
-          const saved = r.analysis.fileSize - r.strippedSize;
-          const savedKB = (saved / 1024).toFixed(1);
-          return (
-            <div
-              key={`${r.fileName}-${i}`}
-              className="bg-surface border border-border rounded-card p-4 flex items-center justify-between gap-3"
+      {results.map((result, index) => (
+        <article
+          key={index}
+          className="p-5 bg-surface border border-border rounded-card space-y-4"
+        >
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <div className="min-w-0">
+              <h3 className="font-semibold break-all">{result.fileName}</h3>
+              <p className="text-sm text-text-secondary mt-1">
+                {formatBytes(result.analysis.fileSize)} →{" "}
+                {formatBytes(result.strippedSize)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                download(
+                  new Blob([result.strippedBuffer], {
+                    type: "application/octet-stream",
+                  }),
+                  cleanFileName(result.fileName),
+                )
+              }
+              className="rounded-button px-4 py-3 bg-primary text-bg font-bold text-sm"
             >
-              <div className="min-w-0 flex-1">
-                <p className="font-semibold text-text-primary truncate text-sm">{r.fileName}</p>
-                <p className="text-xs text-text-tertiary mt-0.5">
-                  {r.analysis.entries.length} entries stripped · {savedKB} KB saved
-                  {r.injectedSummary && ` · Injected: ${r.injectedSummary}`}
+              Download cleaned file
+            </button>
+          </div>
+          {result.afterAnalysis.inspectionNote ? (
+            <p className="text-sm text-text-secondary">
+              {result.afterAnalysis.inspectionNote}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-input border border-border">
+                <p className="text-xs text-text-secondary">
+                  Detected risk before
+                </p>
+                <p className="text-2xl font-bold mt-1">
+                  {result.analysis.riskScore}
+                  <span className="text-xs font-normal text-text-secondary">
+                    {" "}
+                    / 100
+                  </span>
                 </p>
               </div>
-              <button
-                type="button"
-                onClick={() => handleDownloadOne(r)}
-                className="flex-shrink-0 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-xs py-1.5 px-3 rounded-button transition-colors duration-150"
-              >
-                Download
-              </button>
+              <div className="p-4 rounded-input border border-border">
+                <p className="text-xs text-text-secondary">
+                  Detected risk after
+                </p>
+                <p className="text-2xl font-bold mt-1">
+                  {result.afterAnalysis.riskScore}
+                  <span className="text-xs font-normal text-text-secondary">
+                    {" "}
+                    / 100
+                  </span>
+                </p>
+              </div>
             </div>
-          );
-        })}
-      </div>
-
-      {/* Action buttons */}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={handleDownloadAll}
-          className="flex-1 bg-primary hover:bg-primary/90 text-white font-bold py-3 px-5 rounded-button text-base transition-colors duration-150"
-        >
-          Download All ({results.length} files)
-        </button>
+          )}
+          {result.injectedSummary && (
+            <p className="text-sm text-accent">
+              Decoy data added: {result.injectedSummary}. These replacement
+              fields appear in the after-inspection.
+            </p>
+          )}
+          {result.afterAnalysis.entries.length > 0 && (
+            <details>
+              <summary className="cursor-pointer text-sm text-accent">
+                Review {result.afterAnalysis.entries.length} fields detected in
+                the output
+              </summary>
+              <div className="mt-4">
+                <MetadataTable
+                  entries={result.afterAnalysis.entries}
+                  byCategory={result.afterAnalysis.byCategory}
+                />
+              </div>
+            </details>
+          )}
+        </article>
+      ))}
+      <p className="text-xs text-text-secondary leading-relaxed">
+        Removal targets supported metadata, not visible content or every
+        possible hidden field. Color and rendering information may remain.
+        Review the downloaded file before sharing; some formats have limited
+        inspection.{" "}
+        <a href="/docs#browser-limits" className="text-accent underline">
+          Read format limits.
+        </a>
+      </p>
+      {error && (
+        <p role="alert" className="text-sm text-risk-critical">
+          {error}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-3">
+        {results.length > 1 && (
+          <button
+            type="button"
+            disabled={zipping}
+            onClick={downloadAll}
+            className="px-5 py-3 rounded-button bg-primary text-bg font-bold disabled:opacity-50"
+          >
+            {zipping
+              ? "Creating ZIP…"
+              : `Download all as ZIP (${results.length})`}
+          </button>
+        )}
         <button
           type="button"
           onClick={onReset}
-          title="Process more files"
-          aria-label="Process more files"
-          className="flex-shrink-0 bg-surface hover:bg-border/60 border border-border text-text-secondary hover:text-text-primary font-bold py-3 px-4 rounded-button text-base transition-colors duration-150"
+          className="px-5 py-3 rounded-button border border-border font-semibold"
         >
-          Process More
+          Clear files and start again
         </button>
-      </div>
-
-      {/* Share prompt */}
-      <div className="flex flex-col items-center gap-2 text-center pt-1">
-        <p className="text-sm text-text-secondary">Surprised by what your photos revealed?</p>
-        <div className="flex items-center gap-4 text-sm">
-          <a
-            href={twitterUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-accent hover:underline font-medium transition-colors duration-150"
-          >
-            Share on X
-          </a>
-          <span className="text-border" aria-hidden="true">·</span>
-          <button
-            type="button"
-            onClick={handleCopyLink}
-            className="text-text-tertiary hover:text-text-secondary font-medium transition-colors duration-150"
-          >
-            Copy link
-          </button>
-        </div>
       </div>
     </div>
   );
-}
-
-/* ------------------------------------------------------------------ */
-/* Main export — chooses single vs batch view                         */
-/* ------------------------------------------------------------------ */
-
-export default function BeforeAfter({
-  analysis,
-  strippedSize,
-  strippedBuffer,
-  processingTimeMs,
-  fileName,
-  results,
-  onReset,
-}: BeforeAfterProps) {
-  // Batch mode: `results` array provided
-  if (results && results.length > 1) {
-    return <BatchView results={results} onReset={onReset} />;
-  }
-
-  // Single result from batch array
-  if (results && results.length === 1) {
-    const r = results[0];
-    return (
-      <SingleView
-        analysis={r.analysis}
-        strippedSize={r.strippedSize}
-        strippedBuffer={r.strippedBuffer}
-        processingTimeMs={processingTimeMs ?? 0}
-        fileName={r.fileName}
-        onReset={onReset}
-        injectedSummary={r.injectedSummary}
-      />
-    );
-  }
-
-  // Legacy single-file props
-  if (analysis && strippedBuffer && strippedSize !== undefined && fileName) {
-    return (
-      <SingleView
-        analysis={analysis}
-        strippedSize={strippedSize}
-        strippedBuffer={strippedBuffer}
-        processingTimeMs={processingTimeMs ?? 0}
-        fileName={fileName}
-        onReset={onReset}
-      />
-    );
-  }
-
-  return null;
 }

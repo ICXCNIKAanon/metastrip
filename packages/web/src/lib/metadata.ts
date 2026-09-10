@@ -1,6 +1,8 @@
 import ExifReader from 'exifreader';
+import { DOMParser, onErrorStopParsing } from '@xmldom/xmldom';
 import JSZip from 'jszip';
 import { categorizeTag, RISK_LEVELS, type MetadataCategory, type RiskLevel } from './categories';
+import { detectFormat } from './stripper';
 import { isZip } from './strip-office';
 import { isPdf } from './strip-pdf';
 import { isMp3 } from './strip-mp3';
@@ -31,6 +33,7 @@ export interface GPSData {
 export interface FileAnalysis {
   fileName: string;
   fileSize: number;
+  inspectionNote?: string;
   entries: MetadataEntry[];
   gps: GPSData | null;
   riskScore: number;
@@ -65,13 +68,13 @@ function extractGPS(tags: Record<string, unknown>): GPSData | null {
   let lat = parseFloat(String(latDescription));
   let lon = parseFloat(String(lonDescription));
 
-  if (isNaN(lat) || isNaN(lon)) return null;
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
 
   const latRefVal = latRef ? String(latRef['description'] ?? latRef['value'] ?? '') : '';
   const lonRefVal = lonRef ? String(lonRef['description'] ?? lonRef['value'] ?? '') : '';
 
-  if (latRefVal.toUpperCase().startsWith('S')) lat = -lat;
-  if (lonRefVal.toUpperCase().startsWith('W')) lon = -lon;
+  if (latRefVal.toUpperCase().startsWith('S')) lat = -Math.abs(lat);
+  if (lonRefVal.toUpperCase().startsWith('W')) lon = -Math.abs(lon);
 
   const result: GPSData = { lat, lon };
 
@@ -452,6 +455,7 @@ function analyzePdfBuffer(buffer: ArrayBuffer, fileName: string): FileAnalysis {
       for (let i = 0; i < hex.length; i += 2) {
         decoded += String.fromCharCode(parseInt(hex.slice(i, i + 2), 16));
       }
+      decoded = decoded.replace(/\0/g, '');
       if (decoded.trim()) {
         entries.push({
           key,
@@ -954,7 +958,15 @@ function analyzeMp4Buffer(buffer: ArrayBuffer, fileName: string): FileAnalysis {
 }
 
 export async function analyzeFile(file: File): Promise<FileAnalysis> {
-  const buffer = await file.arrayBuffer();
+  return analyzeBuffer(await file.arrayBuffer(), file.name);
+}
+
+export async function analyzeBuffer(buffer: ArrayBuffer, fileName: string): Promise<FileAnalysis> {
+  const file = { name: fileName, size: buffer.byteLength };
+  const format = detectFormat(buffer, fileName);
+  if (!format) throw new Error('File contents do not match a supported format. Check the file and try again.');
+  const limited = ['gif', 'svg', 'heic', 'avif', 'mkv', 'epub'].includes(format);
+  if (limited) return { ...buildAudioAnalysis(fileName, buffer.byteLength, []), inspectionNote: 'Detailed metadata inspection is limited for this format. A zero score does not establish that the file contains no private information. Supported metadata can still be removed.' };
 
   // PDF documents
   if (isPdf(buffer)) {
@@ -991,7 +1003,7 @@ export async function analyzeFile(file: File): Promise<FileAnalysis> {
   }
 
   // Use expanded mode for properly structured GPS values
-  const expanded = await ExifReader.load(buffer, { expanded: true });
+  const expanded = await ExifReader.load(buffer, { expanded: true, domParser: new DOMParser({ onError: onErrorStopParsing }) });
 
   // Flatten all expanded groups into a single tag map
   const flatTags: Record<string, unknown> = {};

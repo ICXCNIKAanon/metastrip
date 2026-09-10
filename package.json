@@ -2,7 +2,7 @@
   "name": "metastrip",
   "version": "0.1.0",
   "private": true,
-  "description": "The world's most complete metadata privacy platform — web app, CLI, MCP server, and API",
+  "description": "The world's most complete metadata privacy platform \u2014 web app, CLI, MCP server, and API",
   "author": "MetaStrip <hello@metastrip.ai>",
   "license": "MIT",
   "workspaces": [
@@ -32,6 +32,10 @@
     "typescript": "^5.3.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.9.0"
+  },
+  "overrides": {
+    "postcss": "^8.5.28",
+    "minimatch@9": "^9.0.9"
   }
 }

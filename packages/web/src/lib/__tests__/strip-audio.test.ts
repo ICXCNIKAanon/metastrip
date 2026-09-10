@@ -8,7 +8,7 @@ import { isFlac, stripFlac } from '../strip-flac';
 // ---------------------------------------------------------------------------
 
 /** Concatenates multiple Uint8Array parts into a single Uint8Array. */
-function concatBytes(parts: Uint8Array[]): Uint8Array {
+function concatBytes(parts: Uint8Array[]): Uint8Array<ArrayBuffer> {
   const total = parts.reduce((acc, p) => acc + p.byteLength, 0);
   const out = new Uint8Array(total);
   let offset = 0;
@@ -44,7 +44,7 @@ function readUint32LE(buffer: ArrayBuffer, offset: number): number {
 /**
  * Builds a syncsafe integer (4 bytes, 7 bits per byte, MSB first) for ID3v2 size.
  */
-function encodeSyncsafe(value: number): Uint8Array {
+function encodeSyncsafe(value: number): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array(4);
   out[3] = value & 0x7F;
   out[2] = (value >> 7) & 0x7F;
@@ -58,7 +58,7 @@ function encodeSyncsafe(value: number): Uint8Array {
  * @param tagData  The tag payload bytes (not including the 10-byte header).
  * @param hasFooter  Whether to set the footer flag (bit 4 of flags byte).
  */
-function buildId3v2(tagData: Uint8Array, hasFooter = false): Uint8Array {
+function buildId3v2(tagData: Uint8Array, hasFooter = false): Uint8Array<ArrayBuffer> {
   const header = new Uint8Array(10);
   header[0] = 0x49; // 'I'
   header[1] = 0x44; // 'D'
@@ -94,7 +94,7 @@ function buildId3v2(tagData: Uint8Array, hasFooter = false): Uint8Array {
 /**
  * Builds an ID3v1 tag (128 bytes starting with "TAG").
  */
-function buildId3v1(title = 'Test Song', artist = 'Test Artist'): Uint8Array {
+function buildId3v1(title = 'Test Song', artist = 'Test Artist'): Uint8Array<ArrayBuffer> {
   const tag = new Uint8Array(128);
   tag[0] = 0x54; // 'T'
   tag[1] = 0x41; // 'A'
@@ -145,7 +145,7 @@ function wavFourCC(s: string): number {
 }
 
 /** Builds a WAV chunk: [FourCC 4B LE][size 4B LE][data][optional pad byte] */
-function buildWavChunk(type: string, data: Uint8Array): Uint8Array {
+function buildWavChunk(type: string, data: Uint8Array): Uint8Array<ArrayBuffer> {
   const paddedSize = data.byteLength + (data.byteLength & 1);
   const out = new Uint8Array(8 + paddedSize);
   const view = new DataView(out.buffer);
@@ -156,7 +156,7 @@ function buildWavChunk(type: string, data: Uint8Array): Uint8Array {
 }
 
 /** Builds a LIST/INFO chunk with one INAM sub-chunk. */
-function buildListInfo(title = 'Test Track'): Uint8Array {
+function buildListInfo(title = 'Test Track'): Uint8Array<ArrayBuffer> {
   // INAM sub-chunk
   const inamData = new Uint8Array(title.length + 1); // null-terminated
   for (let i = 0; i < title.length; i++) inamData[i] = title.charCodeAt(i);
@@ -170,7 +170,7 @@ function buildListInfo(title = 'Test Track'): Uint8Array {
 }
 
 /** Builds a fmt  chunk (PCM, 44100 Hz, stereo, 16-bit). */
-function buildFmtChunk(): Uint8Array {
+function buildFmtChunk(): Uint8Array<ArrayBuffer> {
   const fmt = new Uint8Array(16);
   const view = new DataView(fmt.buffer);
   view.setUint16(0, 1, true);    // PCM = 1
@@ -183,7 +183,7 @@ function buildFmtChunk(): Uint8Array {
 }
 
 /** Builds a data chunk with the given audio sample bytes. */
-function buildDataChunk(samples: Uint8Array = new Uint8Array([0x00, 0x01, 0x02, 0x03])): Uint8Array {
+function buildDataChunk(samples: Uint8Array = new Uint8Array([0x00, 0x01, 0x02, 0x03])): Uint8Array<ArrayBuffer> {
   return buildWavChunk('data', samples);
 }
 
@@ -236,7 +236,7 @@ function wavHasChunk(buffer: ArrayBuffer, type: string): boolean {
 // ---------------------------------------------------------------------------
 
 /** Builds a FLAC metadata block. */
-function buildFlacBlock(type: number, data: Uint8Array, isLast = false): Uint8Array {
+function buildFlacBlock(type: number, data: Uint8Array, isLast = false): Uint8Array<ArrayBuffer> {
   const header = new Uint8Array(4);
   header[0] = (isLast ? 0x80 : 0x00) | (type & 0x7F);
   header[1] = (data.byteLength >> 16) & 0xFF;
@@ -246,7 +246,7 @@ function buildFlacBlock(type: number, data: Uint8Array, isLast = false): Uint8Ar
 }
 
 /** Builds a minimal STREAMINFO block (34 bytes of data). */
-function buildStreamInfo(isLast = false): Uint8Array {
+function buildStreamInfo(isLast = false): Uint8Array<ArrayBuffer> {
   // 34 bytes: all zeros except a few fields — enough to be structurally valid
   const data = new Uint8Array(34);
   const view = new DataView(data.buffer);
@@ -258,7 +258,7 @@ function buildStreamInfo(isLast = false): Uint8Array {
 }
 
 /** Builds a VORBIS_COMMENT block with some tag data. */
-function buildVorbisComment(tags: string[], isLast = false): Uint8Array {
+function buildVorbisComment(tags: string[], isLast = false): Uint8Array<ArrayBuffer> {
   // vendor string: "test"
   const vendor = new TextEncoder().encode('test');
   const data = new Uint8Array(4 + vendor.byteLength + 4 + tags.reduce((acc, t) => acc + 4 + t.length, 0));
@@ -276,7 +276,7 @@ function buildVorbisComment(tags: string[], isLast = false): Uint8Array {
 }
 
 /** Builds a PICTURE block (type 6) with dummy data. */
-function buildPictureBlock(isLast = false): Uint8Array {
+function buildPictureBlock(isLast = false): Uint8Array<ArrayBuffer> {
   const data = new Uint8Array(32).fill(0xAB); // fake picture data
   return buildFlacBlock(6, data, isLast);
 }

@@ -3,7 +3,10 @@ import CodeBlock from '@/components/code-block';
 import Breadcrumbs from '@/components/breadcrumbs';
 
 export const metadata: Metadata = {
-  title: 'Documentation — MetaStrip',
+  openGraph: { title: 'MetaStrip documentation', description: 'Format coverage, browser limits, CLI and MCP setup.', url: '/docs', images: ['/og-image.png'] },
+  twitter: { card: 'summary_large_image', title: 'MetaStrip documentation', description: 'Format coverage, browser limits, CLI and MCP setup.', images: ['/og-image.png'] },
+  alternates: { canonical: 'https://metastrip.ai/docs' },
+  title: 'Documentation',
   description:
     'Full documentation for MetaStrip: CLI, MCP server, npm package, and REST API reference.',
 };
@@ -86,12 +89,26 @@ export default function DocsPage() {
     <div className="space-y-16">
       <Breadcrumbs items={[{ name: 'Documentation', href: '/docs' }]} />
       {/* Supported Formats */}
+      <h1 className="text-4xl font-bold tracking-tight">Documentation</h1>
+      <section id="browser-limits" className="mb-12 rounded-card border border-primary/20 bg-surface p-6 scroll-mt-24">
+        <h2 className="text-2xl font-bold mb-4">Browser tool: coverage and limits</h2>
+        <p className="text-text-secondary mb-4">Choose up to 50 files, 500 MB total. Files are inspected and cleaned one at a time in Web Workers. Downloads are new copies; originals remain unchanged. Each output is inspected again, and results report detected fields rather than assuming a zero risk score.</p>
+        <ul className="list-disc pl-5 space-y-3 text-sm text-text-secondary leading-relaxed">
+          <li><strong className="text-text-primary">JPEG, PNG and WebP:</strong> Remove supported EXIF, XMP and text metadata without recompressing image data. Color profiles are preserved by default. Rendering metadata such as orientation can affect display; review your copy.</li>
+          <li><strong className="text-text-primary">GIF, SVG, EPUB and MKV/WebM:</strong> Metadata removal is format-specific and detailed inspection is limited. An empty scan does not confirm that all metadata is absent. HEIC/AVIF image-item cleaning is currently rejected because removing its container metadata can corrupt the image. SVG cleanup does not sanitize scripts or external resources.</li>
+          <li><strong className="text-text-primary">PDF:</strong> Removes supported readable information fields and plain XMP packets. Compressed object streams, attachments, comments, signatures and visible content are not fully inspected or sanitized. Cleaning can invalidate document signatures. Do not use this as document redaction.</li>
+          <li><strong className="text-text-primary">Office documents:</strong> Removes supported properties, comments and editing metadata. Review tracked changes and document appearance after cleaning. Embedded files, visible content and every custom field are not guaranteed to be removed.</li>
+          <li><strong className="text-text-primary">Audio and video:</strong> Removes supported container metadata without re-encoding the media. Embedded streams and unsupported tags can remain. M4A is supported; raw AAC is not accepted by the browser tool.</li>
+          <li><strong className="text-text-primary">Risk scores:</strong> A heuristic based on detected fields. A zero score is not a privacy certification, identity protection guarantee or malware scan.</li>
+        </ul>
+        <p className="text-sm text-text-secondary mt-4">GPS coordinates stay local unless you open an external map link. Optional decoy injection is available for JPEG, PNG and WebP; replacement fields are reported in the output inspection.</p>
+      </section>
       <section id="formats">
         <h2 className="text-2xl font-bold text-text-primary mb-4">
           Supported Formats
         </h2>
         <p className="text-text-secondary mb-6">
-          MetaStrip supports 20 file formats across images, documents, audio, and video.
+          Browser removal coverage varies by format. The table below describes supported cleaning operations and unavailable image-item formats.
         </p>
         <div className="overflow-x-auto rounded-card border border-border mb-4">
           <table className="w-full text-sm border-collapse">
@@ -119,8 +136,8 @@ export default function DocsPage() {
                 ['FLAC', 'Audio', 'Vorbis comments, cover art', 'None'],
                 ['MP4', 'Video', 'User data, GPS, iTunes metadata', 'None'],
                 ['MOV', 'Video', 'User data, GPS, iTunes metadata', 'None'],
-                ['HEIC/HEIF', 'Image', 'udta box, GPS, iTunes metadata', 'None'],
-                ['AVIF', 'Image', 'udta box, GPS, iTunes metadata', 'None'],
+                ['HEIC/HEIF', 'Image', 'Item-based browser cleaning unavailable', 'Not cleaned'],
+                ['AVIF', 'Image', 'Item-based browser cleaning unavailable', 'Not cleaned'],
                 ['M4A', 'Audio', 'udta box, iTunes metadata', 'None'],
                 ['AVI', 'Video', 'LIST/INFO, JUNK', 'None'],
                 ['MKV/WebM', 'Video', 'Tags element', 'None'],
@@ -137,15 +154,15 @@ export default function DocsPage() {
           </table>
         </div>
         <p className="text-text-tertiary text-sm">
-          All processing uses binary-level surgery — file content data is never decoded or re-encoded.
+          Browser image and media cleaning preserves encoded image/audio/video data. Document archives are rewritten, and rendering or editing metadata may affect presentation. Review cleaned copies.
         </p>
       </section>
 
       {/* Getting Started */}
       <section id="getting-started">
-        <h1 className="text-3xl font-bold text-text-primary mb-4">
+        <h2 className="text-3xl font-bold text-text-primary mb-4">
           Getting Started
-        </h1>
+        </h2>
         <p className="text-text-secondary mb-6">
           Install the MetaStrip CLI globally and start cleaning metadata from your images in seconds.
           The CLI processes files locally — nothing is sent to a server.
@@ -456,7 +473,7 @@ npx metastrip-hooks uninstall`} />
           </span>
         </div>
         <p className="text-text-secondary mb-4">
-          Strip metadata from any supported file via HTTP. Send a file, get back the cleaned version. Supports all 20 formats.
+          Strip metadata from any supported file via HTTP. Send a file, get back the cleaned version. Coverage depends on the processor. See browser format limits above.
         </p>
 
         <h3 className="text-lg font-semibold text-text-primary mt-6 mb-3">POST /api/v1/strip</h3>

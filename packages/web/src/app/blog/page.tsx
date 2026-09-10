@@ -4,7 +4,7 @@ import { getAllPosts } from '@/lib/blog';
 import Breadcrumbs from '@/components/breadcrumbs';
 
 export const metadata: Metadata = {
-  title: 'Blog — MetaStrip',
+  title: 'Blog',
   description:
     'Guides and articles about photo metadata, EXIF data, GPS privacy risks, and how to protect your privacy when sharing images online.',
   alternates: {

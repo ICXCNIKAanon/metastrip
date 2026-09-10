@@ -2,9 +2,12 @@ import type { Metadata } from 'next';
 import JsonLd from '@/components/json-ld';
 
 export const metadata: Metadata = {
+  openGraph: { title: 'Compare file metadata — MetaStrip', description: 'Compare detected fields locally. Metadata matches are clues, not proof of identity.', url: '/compare', images: ['/og-image.png'] },
+  twitter: { card: 'summary_large_image', title: 'Compare file metadata — MetaStrip', description: 'Compare detected fields locally. Metadata matches are clues, not proof of identity.', images: ['/og-image.png'] },
+  alternates: { canonical: 'https://metastrip.ai/compare' },
   title: 'Compare Files',
   description:
-    'Upload two files to check if they were taken by the same device. Compare metadata fingerprints side by side.',
+    'Compare detected camera and identifier metadata in two JPEG, PNG or WebP files locally. Metadata matches are clues, not proof of device identity.',
 };
 
 const breadcrumbJsonLd = {

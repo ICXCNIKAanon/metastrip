@@ -43,7 +43,7 @@ interface PngChunkDef {
  * Encodes a single PNG chunk: length + type + data + CRC.
  * CRC covers the type and data bytes.
  */
-function encodeChunk(type: string, data: Uint8Array = new Uint8Array(0)): Uint8Array {
+function encodeChunk(type: string, data: Uint8Array = new Uint8Array(0)): Uint8Array<ArrayBuffer> {
   const typeBytes = new Uint8Array(type.split('').map((c) => c.charCodeAt(0)));
   const totalSize = 4 + 4 + data.byteLength + 4; // length + type + data + CRC
   const out = new Uint8Array(totalSize);

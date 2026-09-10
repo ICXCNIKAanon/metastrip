@@ -14,12 +14,12 @@
  *   Padding byte (0x00) is added when data size is odd; not included in size field.
  *
  * VP8X flags byte (offset 0 within VP8X data, i.e. byte 20 from file start):
- *   bit 2 = ICC profile present
- *   bit 3 = alpha channel present
- *   bit 4 = EXIF metadata present
- *   bit 5 = XMP metadata present
- *   bit 6 = animation
- *   bits 0-1, 7 = reserved
+ *   bit 5 = ICC profile present
+ *   bit 4 = alpha channel present
+ *   bit 3 = EXIF metadata present
+ *   bit 2 = XMP metadata present
+ *   bit 1 = animation
+ *   bits 0, 6-7 = reserved
  */
 
 // ---------------------------------------------------------------------------
@@ -50,8 +50,8 @@ const CC_VP8X = fourCC('VP8X');
 const CC_ICCP = fourCC('ICCP');
 
 // VP8X flags bit positions
-const FLAG_EXIF_BIT = 4; // bit 4
-const FLAG_XMP_BIT  = 5; // bit 5
+const FLAG_EXIF_BIT = 3; // mask 0x08
+const FLAG_XMP_BIT  = 2; // mask 0x04
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -77,8 +77,8 @@ export interface StripWebpResult {
  *   ANIM, ANMF — Animation data
  *   ICCP — ICC color profile (always preserved)
  *
- * After stripping, the VP8X flags byte is updated to clear bits 4 (EXIF)
- * and 5 (XMP), and the RIFF file size header is recalculated.
+ * After stripping, the VP8X flags byte is updated to clear bits 3 (EXIF)
+ * and 2 (XMP), and the RIFF file size header is recalculated.
  *
  * @throws {Error} if the buffer is not a valid WebP file.
  */
@@ -140,8 +140,7 @@ export function stripWebp(input: Buffer): StripWebpResult {
 
     if (chunkEnd > len) {
       // Chunk claims more bytes than remain — clamp to buffer end and keep.
-      chunks.push([offset, len]);
-      break;
+      throw new Error('Truncated WebP chunk: file was not modified');
     }
 
     const keep = shouldKeepChunk(cc);
@@ -193,8 +192,8 @@ export function stripWebp(input: Buffer): StripWebpResult {
   outView.setUint32(4, totalSize - 8, true);
 
   // ---------------------------------------------------------------------------
-  // Update VP8X flags: clear EXIF (bit 4) and XMP (bit 5) flag bits.
-  // Preserve all other bits (ICC bit 2, alpha bit 3, animation bit 6, etc.).
+  // Update VP8X flags: clear EXIF (bit 3) and XMP (bit 2) flag bits.
+  // Preserve all other bits (ICC bit 5, alpha bit 4, animation bit 1, etc.).
   // ---------------------------------------------------------------------------
   if (vp8xOutputOffset !== -1 && vp8xOutputOffset < out.byteLength) {
     const flagsByte = out[vp8xOutputOffset]!;

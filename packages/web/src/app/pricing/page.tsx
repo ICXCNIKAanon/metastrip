@@ -3,17 +3,20 @@ import PricingCard from '@/components/pricing-card';
 import Breadcrumbs from '@/components/breadcrumbs';
 
 export const metadata: Metadata = {
-  title: 'Pricing — MetaStrip | Free Metadata Remover',
+  openGraph: { title: 'MetaStrip pricing', description: 'Free browser metadata cleaning. Hosted API plans are coming soon.', url: '/pricing', images: ['/og-image.png'] },
+  twitter: { card: 'summary_large_image', title: 'MetaStrip pricing', description: 'Free browser metadata cleaning. Hosted API plans are coming soon.', images: ['/og-image.png'] },
+  alternates: { canonical: 'https://metastrip.ai/pricing' },
+  title: 'Pricing',
   description:
-    'MetaStrip is free forever for the web tool. Pay only when you need API access at scale. No credit card required to get started.',
+    'The MetaStrip browser tool is free with no signup. Hosted API plans are coming soon; use the local CLI and MCP server today.',
 };
 
 const FREE_FEATURES = [
-  'Unlimited file processing',
-  '20 formats: images, docs, audio, video',
+  'Free processing; 50 files / 500 MB per batch',
+  'Supported image, document, audio and video formats',
   'Client-side processing — files never leave your browser',
   'No signup required',
-  'Zero quality loss',
+  'No image or media recompression',
 ];
 
 const DEVELOPER_FEATURES = [
@@ -42,7 +45,7 @@ export default function PricingPage() {
           Simple, transparent pricing
         </h1>
         <p className="mt-4 text-text-secondary text-base max-w-xl mx-auto">
-          The web tool is free forever. Pay only when you need API access at scale.
+          The web tool is free. Hosted API plans below are planned and are not yet available.
         </p>
       </div>
 
@@ -51,7 +54,7 @@ export default function PricingPage() {
         <PricingCard
           name="Free"
           price="Free"
-          description="Everything you need to protect your privacy"
+          description="Inspect and clean supported metadata locally"
           features={FREE_FEATURES}
           cta="Use Free Tool →"
           ctaHref="/"
@@ -86,31 +89,9 @@ export default function PricingPage() {
           API access coming soon
         </h2>
         <p className="text-text-secondary text-sm mb-6">
-          Drop your email to get early access when the API launches.
+          Email us to ask about API availability. Your email app will open; nothing is submitted from this page.
         </p>
-        <form
-          action="#"
-          className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
-        >
-          <label htmlFor="waitlist-email" className="sr-only">
-            Email address
-          </label>
-          <input
-            id="waitlist-email"
-            type="email"
-            name="email"
-            placeholder="you@example.com"
-            autoComplete="email"
-            required
-            className="flex-1 px-4 py-2.5 rounded-input bg-bg border border-border text-text-primary placeholder:text-text-tertiary text-sm focus:outline-none focus:border-primary/60 transition-colors duration-150"
-          />
-          <button
-            type="submit"
-            className="px-5 py-2.5 rounded-button bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors duration-150 whitespace-nowrap"
-          >
-            Notify me
-          </button>
-        </form>
+        <a href="mailto:hello@metastrip.ai?subject=MetaStrip%20API%20availability" className="inline-block px-5 py-3 rounded-button bg-primary text-bg text-sm font-semibold">Ask about API access</a>
       </section>
     </div>
   );

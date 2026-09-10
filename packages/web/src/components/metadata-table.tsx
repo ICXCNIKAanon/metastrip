@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { MetadataEntry } from '@/lib/metadata';
 import type { MetadataCategory } from '@/lib/categories';
 import { CATEGORY_ICONS } from '@/lib/categories';
@@ -25,6 +25,7 @@ const CATEGORY_ORDER: MetadataCategory[] = [
 ];
 
 export default function MetadataTable({ entries, byCategory }: MetadataTableProps) {
+  const contentId = useId();
   const [expanded, setExpanded] = useState(false);
 
   const activeCategories = CATEGORY_ORDER.filter(
@@ -38,7 +39,7 @@ export default function MetadataTable({ entries, byCategory }: MetadataTableProp
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        aria-controls="metadata-table-content"
+        aria-controls={contentId}
         className="w-full flex items-center justify-between px-4 py-3 text-sm text-text-secondary hover:text-text-primary hover:bg-border/30 transition-colors duration-150"
       >
         <span>
@@ -51,7 +52,8 @@ export default function MetadataTable({ entries, byCategory }: MetadataTableProp
 
       {/* Expandable content */}
       <div
-        id="metadata-table-content"
+        id={contentId}
+        hidden={!expanded}
         className={`transition-all duration-300 overflow-hidden ${
           expanded ? 'max-h-[9999px] opacity-100' : 'max-h-0 opacity-0'
         }`}
@@ -80,18 +82,18 @@ export default function MetadataTable({ entries, byCategory }: MetadataTableProp
                   </div>
 
                   {/* Entry rows */}
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm table-fixed" aria-label={`${cat} metadata`}>
                     <tbody>
                       {catEntries.map((entry) => (
                         <tr
                           key={entry.key}
                           className="border-b border-border/50 last:border-b-0 hover:bg-border/10 transition-colors duration-100"
                         >
-                          <td className="px-4 py-2 w-2/5 text-text-secondary font-medium truncate align-top">
+                          <td className="px-4 py-2 w-2/5 text-text-secondary font-medium break-words align-top">
                             {entry.label}
                           </td>
                           <td
-                            className={`px-4 py-2 w-3/5 truncate align-top font-mono text-xs break-all ${
+                            className={`px-4 py-2 w-3/5 align-top font-mono text-xs break-all ${
                               RISK_VALUE_CLASSES[entry.risk] ?? 'text-text-primary'
                             }`}
                           >

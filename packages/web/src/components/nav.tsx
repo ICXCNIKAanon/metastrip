@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
-const NPM_SNIPPET = 'npm i @metastrip/cli';
+const NPM_SNIPPET = 'npm i -g @metastrip/cli';
 
 export default function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -31,7 +31,7 @@ export default function Nav() {
           </Link>
 
           {/* Desktop nav links */}
-          <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
+          <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-6">
             <Link
               href="/docs"
               className="text-text-secondary hover:text-text-primary text-sm font-medium transition-colors duration-150"
@@ -73,7 +73,7 @@ export default function Nav() {
           </nav>
 
           {/* Desktop right-side actions */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             {/* npm install snippet */}
             <button
               onClick={handleCopyNpm}
@@ -101,12 +101,12 @@ export default function Nav() {
               </svg>
             </button>
 
-            {/* Get API Key CTA */}
+            {/* Open web tool CTA */}
             <Link
-              href="/pricing"
-              className="px-4 py-2 rounded-button bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors duration-150"
+              href="/#tool"
+              className="px-4 py-2 rounded-button bg-primary hover:bg-primary/90 text-bg text-sm font-semibold transition-colors duration-150"
             >
-              Get API Key
+              Open web tool
             </Link>
           </div>
 
@@ -116,7 +116,7 @@ export default function Nav() {
             aria-label="Toggle mobile menu"
             aria-expanded={mobileOpen}
             aria-controls="mobile-menu"
-            className="md:hidden p-2 rounded-md text-text-secondary hover:text-text-primary transition-colors duration-150"
+            className="lg:hidden p-2 rounded-md text-text-secondary hover:text-text-primary transition-colors duration-150"
           >
             {mobileOpen ? (
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -133,7 +133,7 @@ export default function Nav() {
 
       {/* Mobile slide-down menu */}
       {mobileOpen && (
-        <div id="mobile-menu" className="md:hidden border-t border-border bg-bg/95 backdrop-blur-sm">
+        <div id="mobile-menu" className="lg:hidden border-t border-border bg-bg/95 backdrop-blur-sm">
           <nav aria-label="Mobile navigation" className="flex flex-col px-4 py-4 gap-1">
             <Link
               href="/docs"
@@ -189,11 +189,11 @@ export default function Nav() {
                 <span className="text-xs text-text-tertiary">{copied ? 'Copied!' : 'Copy'}</span>
               </button>
               <Link
-                href="/pricing"
+                href="/#tool"
                 onClick={() => setMobileOpen(false)}
-                className="block text-center px-4 py-2.5 rounded-button bg-primary hover:bg-primary/90 text-white text-sm font-semibold transition-colors duration-150"
+                className="block text-center px-4 py-2.5 rounded-button bg-primary hover:bg-primary/90 text-bg text-sm font-semibold transition-colors duration-150"
               >
-                Get API Key
+                Open web tool
               </Link>
             </div>
           </nav>

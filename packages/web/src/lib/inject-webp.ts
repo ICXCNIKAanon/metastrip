@@ -5,12 +5,13 @@
  * device info, and timestamps. Appended to the end of the RIFF container and
  * the RIFF file size header is updated accordingly.
  *
- * If a VP8X chunk is present, its XMP flag (bit 5) is set.
+ * If a VP8X chunk is present, its XMP flag (bit 2) is set.
  *
  * This is a privacy tool: the fake data uses obviously retro devices and
  * famous landmarks so it's clearly decoy data, not deception.
  */
 
+import { escapeXml } from './xml';
 import type { FakeMetadata } from './fake-metadata';
 
 // ---------------------------------------------------------------------------
@@ -27,7 +28,7 @@ function fourCC(s: string): number {
 }
 
 const CC_VP8X = fourCC('VP8X');
-const FLAG_XMP_BIT = 5;
+const FLAG_XMP_BIT = 2;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -95,7 +96,7 @@ export function injectFakeMetadataWebp(
   const outView = new DataView(out.buffer);
   outView.setUint32(4, totalSize - 8, true);
 
-  // Update VP8X flags if present: set XMP bit (bit 5)
+  // Update VP8X flags if present: set XMP bit (bit 2)
   const vp8xDataOffset = findVp8xDataOffset(out);
   if (vp8xDataOffset !== -1) {
     out[vp8xDataOffset] = out[vp8xDataOffset] | (1 << FLAG_XMP_BIT);
@@ -164,9 +165,9 @@ function buildXmpXml(fake: FakeMetadata): string {
       xmlns:xmp="http://ns.adobe.com/xap/1.0/"
       exif:GPSLatitude="${latXmp}"
       exif:GPSLongitude="${lonXmp}"
-      tiff:Make="${fake.device.make}"
-      tiff:Model="${fake.device.model}"
-      xmp:CreateDate="${dateIso}"
+      tiff:Make="${escapeXml(fake.device.make)}"
+      tiff:Model="${escapeXml(fake.device.model)}"
+      xmp:CreateDate="${escapeXml(dateIso)}"
     />
   </rdf:RDF>
 </x:xmpmeta>

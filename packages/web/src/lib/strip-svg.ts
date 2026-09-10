@@ -49,8 +49,8 @@ export function isSvg(buffer: ArrayBuffer): boolean {
   }
   // Strip leading XML comments and whitespace before checking for SVG markers.
   // This handles files that begin with <!-- ... --> before the root element.
-  const stripped = text.replace(/<!--[\s\S]*?-->/g, '').trimStart();
-  return stripped.startsWith('<?xml') || stripped.startsWith('<svg');
+  const stripped = text.replace(/<!--[\s\S]*?-->/g, '').replace(/<\?[\s\S]*?\?>/g, '').trimStart();
+  return /^(?:<\?xml\b[^?]*\?>\s*)?(?:<!DOCTYPE\s+svg\b[^>]*>\s*)?<svg(?:\s|>)/i.test(stripped);
 }
 
 /**

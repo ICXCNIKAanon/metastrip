@@ -16,7 +16,7 @@ const config: Config = {
         'risk-safe': '#22c55e',
         'text-primary': '#ffffff',
         'text-secondary': '#8892b0',
-        'text-tertiary': '#6b7280',
+        'text-tertiary': '#9299aa',
       },
       fontFamily: {
         sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],

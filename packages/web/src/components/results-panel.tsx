@@ -5,7 +5,6 @@ import type { FileAnalysis } from '@/lib/metadata';
 import { CATEGORY_ICONS } from '@/lib/categories';
 import type { MetadataCategory } from '@/lib/categories';
 import type { CustomMetadata } from '@/lib/fake-metadata';
-import { geocodeAddress } from '@/lib/fake-metadata';
 import RiskScore from '@/components/risk-score';
 import GpsMap from '@/components/gps-map';
 import MetadataTable from '@/components/metadata-table';
@@ -31,7 +30,7 @@ const RISK_LEVEL_LABELS: Record<FileAnalysis['riskLevel'], string> = {
   high: 'HIGH',
   medium: 'MEDIUM',
   low: 'LOW',
-  none: 'SAFE',
+  none: 'NONE DETECTED',
 };
 
 const RISK_BADGE_CLASSES: Record<FileAnalysis['riskLevel'], string> = {
@@ -79,33 +78,9 @@ function InjectPanel({
   customMetadata: CustomMetadata | null;
   onCustomMetadataChange: (m: CustomMetadata | null) => void;
 }) {
-  const [geocoding, setGeocoding] = useState(false);
-  const [geocodeResult, setGeocodeResult] = useState<string | null>(null);
-  const [geocodeError, setGeocodeError] = useState<string | null>(null);
-
   const enabled = mode !== 'off';
   const custom = customMetadata || {};
-
-  const updateCustom = (patch: Partial<CustomMetadata>) => {
-    onCustomMetadataChange({ ...custom, ...patch });
-  };
-
-  const handleLookup = async () => {
-    if (!custom.address?.trim()) return;
-    setGeocoding(true);
-    setGeocodeResult(null);
-    setGeocodeError(null);
-    const result = await geocodeAddress(custom.address);
-    if (result) {
-      updateCustom({
-        gps: { lat: result.lat, lon: result.lon, name: result.displayName },
-      });
-      setGeocodeResult(`${result.lat.toFixed(4)}, ${result.lon.toFixed(4)}`);
-    } else {
-      setGeocodeError('Could not resolve address');
-    }
-    setGeocoding(false);
-  };
+  const updateCustom = (patch: Partial<CustomMetadata>) => onCustomMetadataChange({ ...custom, ...patch });
 
   return (
     <div className="bg-surface border border-border rounded-card overflow-hidden">
@@ -114,13 +89,14 @@ function InjectPanel({
         <div className="min-w-0">
           <p className="text-sm font-semibold text-text-primary">Inject decoy metadata</p>
           <p className="text-xs text-text-tertiary mt-0.5">
-            Adds fake GPS, device, and timestamp data to confuse trackers
+            Optional replacement GPS, device, and timestamp fields. Does not guarantee anonymity.
           </p>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={enabled}
+          aria-label="Inject decoy metadata"
           onClick={() => onModeChange(enabled ? 'off' : 'random')}
           className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
             enabled ? 'bg-primary' : 'bg-border'
@@ -145,8 +121,8 @@ function InjectPanel({
               onClick={() => onModeChange('random')}
               className={`flex-1 text-xs font-semibold py-2 rounded-button transition-colors ${
                 mode === 'random'
-                  ? 'bg-primary text-white'
-                  : 'bg-background text-text-secondary hover:text-text-primary border border-border'
+                  ? 'bg-primary text-bg'
+                  : 'bg-bg text-text-secondary hover:text-text-primary border border-border'
               }`}
             >
               Random
@@ -156,8 +132,8 @@ function InjectPanel({
               onClick={() => onModeChange('custom')}
               className={`flex-1 text-xs font-semibold py-2 rounded-button transition-colors ${
                 mode === 'custom'
-                  ? 'bg-primary text-white'
-                  : 'bg-background text-text-secondary hover:text-text-primary border border-border'
+                  ? 'bg-primary text-bg'
+                  : 'bg-bg text-text-secondary hover:text-text-primary border border-border'
               }`}
             >
               Custom
@@ -167,47 +143,12 @@ function InjectPanel({
           {/* Custom fields */}
           {mode === 'custom' && (
             <div className="space-y-3">
-              {/* Location */}
               <div>
-                <label className="block text-xs font-semibold text-text-secondary mb-1">
-                  Location
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="1600 Pennsylvania Ave, Washington DC"
-                    value={custom.address || ''}
-                    onChange={(e) => {
-                      updateCustom({ address: e.target.value });
-                      setGeocodeResult(null);
-                      setGeocodeError(null);
-                    }}
-                    className="flex-1 bg-background border border-border rounded-button px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleLookup}
-                    disabled={geocoding || !custom.address?.trim()}
-                    className="px-3 py-2 text-xs font-semibold rounded-button bg-primary text-white hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-                  >
-                    {geocoding ? (
-                      <span className="inline-flex items-center gap-1.5">
-                        <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Looking up...
-                      </span>
-                    ) : (
-                      'Lookup'
-                    )}
-                  </button>
+                <p className="text-xs font-semibold text-text-secondary mb-2">Replacement location (optional, stays local)</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <label className="text-xs text-text-secondary">Latitude<input type="number" min="-90" max="90" step="any" value={custom.gps?.lat ?? ''} onChange={event => updateCustom({ gps: { lat: Number(event.target.value), lon: custom.gps?.lon ?? 0, name: 'Custom coordinates' } })} className="block w-full mt-1 bg-bg border border-border rounded-button px-3 py-2 text-sm" /></label>
+                  <label className="text-xs text-text-secondary">Longitude<input type="number" min="-180" max="180" step="any" value={custom.gps?.lon ?? ''} onChange={event => updateCustom({ gps: { lat: custom.gps?.lat ?? 0, lon: Number(event.target.value), name: 'Custom coordinates' } })} className="block w-full mt-1 bg-bg border border-border rounded-button px-3 py-2 text-sm" /></label>
                 </div>
-                {geocodeResult && (
-                  <p className="text-xs text-primary mt-1 font-mono">
-                    Resolved: {geocodeResult}
-                  </p>
-                )}
-                {geocodeError && (
-                  <p className="text-xs text-risk-high mt-1">{geocodeError}</p>
-                )}
               </div>
 
               {/* Device */}
@@ -218,17 +159,19 @@ function InjectPanel({
                 <div className="flex gap-2">
                   <input
                     type="text"
+                    aria-label="Replacement device manufacturer"
                     placeholder="Samsung"
                     value={custom.deviceMake || ''}
                     onChange={(e) => updateCustom({ deviceMake: e.target.value })}
-                    className="flex-1 bg-background border border-border rounded-button px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="flex-1 bg-bg border border-border rounded-button px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                   <input
                     type="text"
+                    aria-label="Replacement device model"
                     placeholder="Galaxy S24 Ultra"
                     value={custom.deviceModel || ''}
                     onChange={(e) => updateCustom({ deviceModel: e.target.value })}
-                    className="flex-1 bg-background border border-border rounded-button px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="flex-1 bg-bg border border-border rounded-button px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
                 </div>
               </div>
@@ -240,6 +183,7 @@ function InjectPanel({
                 </label>
                 <input
                   type="datetime-local"
+                  aria-label="Replacement date and time"
                   value={custom.dateTime ? custom.dateTime.replace(/^(\d{4}):(\d{2}):(\d{2}) /, '$1-$2-$3T') : ''}
                   onChange={(e) => {
                     const v = e.target.value;
@@ -251,7 +195,7 @@ function InjectPanel({
                       updateCustom({ dateTime: undefined });
                     }
                   }}
-                  className="w-full bg-background border border-border rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent [color-scheme:dark]"
+                  className="w-full bg-bg border border-border rounded-button px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent [color-scheme:dark]"
                 />
               </div>
             </div>
@@ -307,7 +251,7 @@ function SingleFileView({
         aria-label={`Privacy risk score: ${riskScore} out of 100, ${RISK_LEVEL_LABELS[riskLevel].toLowerCase()}`}
       >
         <span className="text-base font-extrabold tabular-nums" aria-hidden="true">{riskScore}</span>
-        <span className="text-xs font-semibold tracking-wide" aria-hidden="true">{RISK_LEVEL_LABELS[riskLevel]}</span>
+        <span className="text-xs font-semibold tracking-wide" aria-hidden="true">{analysis.inspectionNote ? 'LIMITED SCAN' : RISK_LEVEL_LABELS[riskLevel]}</span>
       </div>
     </div>
   );
@@ -344,9 +288,9 @@ function SingleFileView({
     <button
       type="button"
       onClick={onStrip}
-      className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-button w-full text-lg transition-colors duration-150"
+      className="bg-primary hover:bg-primary/90 text-bg font-bold py-3 px-6 rounded-button w-full text-lg transition-colors duration-150"
     >
-      Remove All Metadata →
+      Remove supported metadata →
     </button>
   );
 
@@ -359,7 +303,7 @@ function SingleFileView({
         <GpsMap lat={gps.lat} lon={gps.lon} />
         <div className="border-l-4 border-risk-critical bg-risk-critical/5 rounded-r-lg p-4">
           <p className="text-sm font-semibold text-risk-critical mb-2">
-            Anyone with this photo can see exactly where you were.
+            This file contains location coordinates that others can read.
           </p>
           <p className="text-xs font-mono text-text-secondary">
             {gps.lat.toFixed(6)}, {gps.lon.toFixed(6)}
@@ -392,10 +336,10 @@ function SingleFileView({
       </div>
       <div className="flex flex-col items-center gap-3">
         <div className="w-full max-w-xs">
-          <RiskScore score={riskScore} level={riskLevel} />
+          {!analysis.inspectionNote && <RiskScore score={riskScore} level={riskLevel} />}
         </div>
         <p className="text-sm text-text-secondary text-center max-w-sm">
-          {summaryText[riskLevel]}
+          {analysis.inspectionNote ?? summaryText[riskLevel]}
         </p>
       </div>
       {riskPills}
@@ -445,7 +389,7 @@ function BatchView({
         </p>
         <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-button text-sm font-bold mt-3 ${RISK_BADGE_CLASSES[highestRiskLevel]}`}>
           <span className="text-base font-extrabold tabular-nums">{highestRiskScore}</span>
-          <span className="text-xs font-semibold tracking-wide">Risk: {RISK_LEVEL_LABELS[highestRiskLevel]}</span>
+          <span className="text-xs font-semibold tracking-wide">{analyses.some(a => a.inspectionNote) ? 'Some scans limited' : `Risk: ${RISK_LEVEL_LABELS[highestRiskLevel]}`}</span>
         </div>
       </div>
 
@@ -470,7 +414,7 @@ function BatchView({
                 </div>
                 <div className={`flex-shrink-0 flex items-center gap-1.5 px-2 py-0.5 rounded-button text-xs font-bold ${RISK_BADGE_CLASSES[a.riskLevel]}`}>
                   <span className="font-extrabold tabular-nums">{a.riskScore}</span>
-                  <span className="font-semibold tracking-wide">{RISK_LEVEL_LABELS[a.riskLevel]}</span>
+                  <span className="font-semibold tracking-wide">{a.inspectionNote ? 'LIMITED SCAN' : RISK_LEVEL_LABELS[a.riskLevel]}</span>
                 </div>
                 <span className="text-text-tertiary text-xs flex-shrink-0">
                   {isExpanded ? '▲' : '▼'}
@@ -484,7 +428,7 @@ function BatchView({
                       <GpsMap lat={a.gps.lat} lon={a.gps.lon} />
                       <div className="border-l-4 border-risk-critical bg-risk-critical/5 rounded-r-lg p-4 mt-4 mb-4">
                         <p className="text-sm font-semibold text-risk-critical mb-2">
-                          Anyone with this photo can see exactly where you were.
+                          This file contains location coordinates that others can read.
                         </p>
                         <p className="text-xs font-mono text-text-secondary">
                           {a.gps.lat.toFixed(6)}, {a.gps.lon.toFixed(6)}
@@ -515,9 +459,9 @@ function BatchView({
       <button
         type="button"
         onClick={onStrip}
-        className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-button w-full text-lg transition-colors duration-150"
+        className="bg-primary hover:bg-primary/90 text-bg font-bold py-3 px-6 rounded-button w-full text-lg transition-colors duration-150"
       >
-        Remove All Metadata ({analyses.length} file{analyses.length === 1 ? '' : 's'}) →
+        Remove supported metadata ({analyses.length} file{analyses.length === 1 ? '' : 's'}) →
       </button>
     </div>
   );

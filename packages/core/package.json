@@ -13,9 +13,7 @@
   },
   "dependencies": {
     "exifreader": "^4.14.0",
-    "sharp": "^0.33.2",
-    "music-metadata": "^7.14.0",
-    "pdf-parse": "^1.1.1"
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -36,5 +34,8 @@
     "type": "git",
     "url": "https://github.com/metastrip/metastrip",
     "directory": "packages/core"
+  },
+  "engines": {
+    "node": ">=20.9.0"
   }
 }
